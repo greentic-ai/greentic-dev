@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use serde_yaml::{Mapping, Value as YamlValue};
+use serde_yaml_bw::{Mapping, Value as YamlValue};
 
 use crate::runner::ValidatedNode;
 
@@ -34,7 +34,7 @@ pub struct TranscriptStore {
 #[derive(Debug)]
 pub enum TranscriptError {
     Io(std::io::Error),
-    Serialize(serde_yaml::Error),
+    Serialize(serde_yaml_bw::Error),
 }
 
 impl TranscriptStore {
@@ -64,7 +64,7 @@ impl TranscriptStore {
             fs::create_dir_all(parent)?;
         }
 
-        let serialized = serde_yaml::to_string(transcript)?;
+        let serialized = serde_yaml_bw::to_string(transcript)?;
         fs::write(&output_path, serialized)?;
 
         Ok(output_path)
@@ -134,8 +134,8 @@ impl From<std::io::Error> for TranscriptError {
     }
 }
 
-impl From<serde_yaml::Error> for TranscriptError {
-    fn from(value: serde_yaml::Error) -> Self {
+impl From<serde_yaml_bw::Error> for TranscriptError {
+    fn from(value: serde_yaml_bw::Error) -> Self {
         TranscriptError::Serialize(value)
     }
 }
@@ -246,7 +246,7 @@ fn key_to_segment(key: &YamlValue) -> String {
     if let Some(as_str) = key.as_str() {
         as_str.to_string()
     } else {
-        serde_yaml::to_string(key)
+        serde_yaml_bw::to_string(key)
             .unwrap_or_else(|_| "<non-string>".to_string())
             .trim_matches('\n')
             .to_string()
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn node_transcript_serializes_resolved_config() {
-        let defaults: YamlValue = serde_yaml::from_str(
+        let defaults: YamlValue = serde_yaml_bw::from_str(
             r#"
 component: oauth
 inputs:
@@ -290,7 +290,7 @@ inputs:
         )
         .unwrap();
 
-        let node_config: YamlValue = serde_yaml::from_str(
+        let node_config: YamlValue = serde_yaml_bw::from_str(
             r#"
 id: oauth-node
 component: oauth
@@ -310,7 +310,7 @@ inputs:
         };
 
         let transcript = node_transcript_from_validated(&validated);
-        let serialized = serde_yaml::to_string(&transcript.resolved_config).unwrap();
+        let serialized = serde_yaml_bw::to_string(&transcript.resolved_config).unwrap();
 
         assert!(
             serialized.contains("client_secret: null"),

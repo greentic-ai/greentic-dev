@@ -1,6 +1,6 @@
 use jsonschema::{Draft, JSONSchema};
 use serde_json::Value;
-use serde_yaml::Value as YamlValue;
+use serde_yaml_bw::Value as YamlValue;
 
 pub fn validate_yaml_against_schema(yaml: &YamlValue, schema_json: &str) -> Result<(), String> {
     let json = serde_json::to_value(yaml)

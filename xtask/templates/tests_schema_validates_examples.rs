@@ -12,12 +12,12 @@ fn example_flow_validates_against_schema() {
         .expect("schema compiles");
 
     let flow_yaml = include_str!("../examples/flows/min.yaml");
-    let flow_value: serde_yaml::Value =
-        serde_yaml::from_str(flow_yaml).expect("example flow must parse");
+    let flow_value: serde_yaml_bw::Value =
+        serde_yaml_bw::from_str(flow_yaml).expect("example flow must parse");
 
     let node = flow_value
         .get("nodes")
-        .and_then(|nodes| nodes.as_sequence())
+        .and_then(|nodes| nodes.as_sequence().map(|sequence| &**sequence))
         .and_then(|sequence| sequence.first())
         .expect("example flow must contain at least one node")
         .clone();

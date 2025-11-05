@@ -33,7 +33,7 @@ fn run_flow(args: RunArgs) -> Result<()> {
                 println!("   schema id: {schema_id}");
             }
 
-            let defaults = serde_yaml::to_string(&stub.defaults)?;
+            let defaults = serde_yaml_bw::to_string(&stub.defaults)?;
             let defaults = defaults.trim();
             if !defaults.is_empty() {
                 println!("   defaults:");

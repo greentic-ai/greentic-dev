@@ -4,7 +4,7 @@ use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde_yaml::Value as YamlValue;
+use serde_yaml_bw::Value as YamlValue;
 
 use crate::registry::DescribeRegistry;
 use crate::schema::{schema_id_from_json, validate_yaml_against_schema};
@@ -107,10 +107,11 @@ where
         &self,
         yaml_source: &str,
     ) -> Result<Vec<ValidatedNode>, FlowValidationError> {
-        let document: YamlValue =
-            serde_yaml::from_str(yaml_source).map_err(|error| FlowValidationError::YamlParse {
+        let document: YamlValue = serde_yaml_bw::from_str(yaml_source).map_err(|error| {
+            FlowValidationError::YamlParse {
                 error: error.to_string(),
-            })?;
+            }
+        })?;
         self.validate_document(&document)
     }
 
@@ -191,14 +192,16 @@ where
 
 fn nodes_from_document(document: &YamlValue) -> Option<&Vec<YamlValue>> {
     if let Some(sequence) = document.as_sequence() {
-        return Some(sequence);
+        return Some(&**sequence);
     }
 
     let mapping = document.as_mapping()?;
-    mapping.get("nodes").and_then(|value| value.as_sequence())
+    mapping
+        .get("nodes")
+        .and_then(|value| value.as_sequence().map(|sequence| &**sequence))
 }
 
-fn component_name(mapping: &serde_yaml::Mapping) -> Option<&str> {
+fn component_name(mapping: &serde_yaml_bw::Mapping) -> Option<&str> {
     mapping
         .get("component")
         .and_then(|value| value.as_str())

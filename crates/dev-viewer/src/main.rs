@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
 use dev_runner::FlowTranscript;
-use serde_yaml::{Mapping, Value as YamlValue};
+use serde_yaml_bw::{Mapping, Value as YamlValue};
 
 #[derive(Parser)]
 #[command(name = "dev-viewer")]
@@ -38,7 +38,7 @@ fn main() -> Result<()> {
 
 fn load_transcript(path: &PathBuf) -> Result<FlowTranscript> {
     let content = fs::read_to_string(path)?;
-    let transcript: FlowTranscript = serde_yaml::from_str(&content)?;
+    let transcript: FlowTranscript = serde_yaml_bw::from_str(&content)?;
     Ok(transcript)
 }
 
@@ -196,7 +196,7 @@ fn key_to_segment(key: &YamlValue) -> String {
     if let Some(as_str) = key.as_str() {
         as_str.to_string()
     } else {
-        serde_yaml::to_string(key)
+        serde_yaml_bw::to_string(key)
             .unwrap_or_else(|_| "<non-string>".to_string())
             .trim_matches('\n')
             .to_string()
@@ -209,7 +209,7 @@ fn render_scalar(value: &YamlValue) -> String {
         YamlValue::Bool(b) => b.to_string(),
         YamlValue::Number(number) => number.to_string(),
         YamlValue::String(s) => s.clone(),
-        _ => serde_yaml::to_string(value)
+        _ => serde_yaml_bw::to_string(value)
             .unwrap_or_default()
             .trim()
             .to_string(),

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde_yaml::Value as YamlValue;
+use serde_yaml_bw::Value as YamlValue;
 
 #[derive(Clone, Debug)]
 pub struct ComponentStub {
@@ -16,7 +16,7 @@ pub struct DescribeRegistry {
 impl DescribeRegistry {
     pub fn new() -> Self {
         let mut stubs = HashMap::new();
-        let defaults: YamlValue = serde_yaml::from_str(
+        let defaults: YamlValue = serde_yaml_bw::from_str(
             r#"
 component: oauth
 inputs:
