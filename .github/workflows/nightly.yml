@@ -1,0 +1,48 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build + Test (full, conformance on)
+        run: |
+          cargo build --workspace --locked --features conformance
+          GOLDEN_ACCEPT=0 cargo test --workspace --locked --features conformance
+
+      - name: Validate all example flows (dry run)
+        run: |
+          if ls examples/flows/*.yaml >/dev/null 2>&1; then
+            for f in examples/flows/*.yaml; do
+              echo "Validating $f"
+              cargo run -p greentic-dev -- run -f "$f" --validate-only
+            done
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-artifacts
+          path: |
+            .greentic/transcripts
+            target/**/*.dSYM
+          if-no-files-found: ignore

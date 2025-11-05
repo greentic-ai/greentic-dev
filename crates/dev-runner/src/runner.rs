@@ -1,0 +1,294 @@
+use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use serde_yaml::Value as YamlValue;
+
+use crate::registry::DescribeRegistry;
+use crate::schema::{schema_id_from_json, validate_yaml_against_schema};
+
+#[cfg(feature = "conformance")]
+use greentic_conformance::validate_node;
+
+#[derive(Clone, Debug, Default)]
+pub struct ComponentSchema {
+    pub node_schema: Option<String>,
+}
+
+pub trait ComponentDescriber {
+    fn describe(&self, component: &str) -> Result<ComponentSchema, String>;
+}
+
+#[derive(Debug, Clone)]
+pub struct StaticComponentDescriber {
+    schemas: HashMap<String, ComponentSchema>,
+    fallback: ComponentSchema,
+}
+
+impl StaticComponentDescriber {
+    pub fn new() -> Self {
+        Self {
+            schemas: HashMap::new(),
+            fallback: ComponentSchema::default(),
+        }
+    }
+
+    pub fn with_fallback(mut self, fallback_schema: ComponentSchema) -> Self {
+        self.fallback = fallback_schema;
+        self
+    }
+
+    pub fn register_schema<S: Into<String>>(
+        &mut self,
+        component: S,
+        schema: ComponentSchema,
+    ) -> &mut Self {
+        self.schemas.insert(component.into(), schema);
+        self
+    }
+}
+
+impl ComponentDescriber for StaticComponentDescriber {
+    fn describe(&self, component: &str) -> Result<ComponentSchema, String> {
+        if let Some(schema) = self.schemas.get(component) {
+            Ok(schema.clone())
+        } else {
+            Ok(self.fallback.clone())
+        }
+    }
+}
+
+impl Default for StaticComponentDescriber {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct FlowValidator<D> {
+    describer: D,
+    registry: DescribeRegistry,
+}
+
+#[derive(Clone, Debug)]
+pub struct ValidatedNode {
+    pub component: String,
+    pub node_config: YamlValue,
+    pub schema_json: Option<String>,
+    pub schema_id: Option<String>,
+    pub defaults: Option<YamlValue>,
+}
+
+impl<D> FlowValidator<D>
+where
+    D: ComponentDescriber,
+{
+    pub fn new(describer: D, registry: DescribeRegistry) -> Self {
+        Self {
+            describer,
+            registry,
+        }
+    }
+
+    pub fn validate_file<P>(&self, path: P) -> Result<Vec<ValidatedNode>, FlowValidationError>
+    where
+        P: AsRef<Path>,
+    {
+        let path_ref = path.as_ref();
+        let source = fs::read_to_string(path_ref).map_err(|error| FlowValidationError::Io {
+            path: path_ref.to_path_buf(),
+            error,
+        })?;
+        self.validate_str(&source)
+    }
+
+    pub fn validate_str(
+        &self,
+        yaml_source: &str,
+    ) -> Result<Vec<ValidatedNode>, FlowValidationError> {
+        let document: YamlValue =
+            serde_yaml::from_str(yaml_source).map_err(|error| FlowValidationError::YamlParse {
+                error: error.to_string(),
+            })?;
+        self.validate_document(&document)
+    }
+
+    pub fn validate_document(
+        &self,
+        document: &YamlValue,
+    ) -> Result<Vec<ValidatedNode>, FlowValidationError> {
+        let nodes = match nodes_from_document(document) {
+            Some(nodes) => nodes,
+            None => {
+                return Err(FlowValidationError::MissingNodes);
+            }
+        };
+
+        let mut validated_nodes = Vec::with_capacity(nodes.len());
+
+        for (index, node) in nodes.iter().enumerate() {
+            let node_mapping = match node.as_mapping() {
+                Some(mapping) => mapping,
+                None => {
+                    return Err(FlowValidationError::NodeNotMapping { index });
+                }
+            };
+
+            let component = component_name(node_mapping)
+                .ok_or(FlowValidationError::MissingComponent { index })?;
+
+            let schema = self.describer.describe(component).map_err(|error| {
+                FlowValidationError::DescribeFailed {
+                    component: component.to_owned(),
+                    error,
+                }
+            })?;
+
+            let schema_json = self
+                .registry
+                .get_schema(component)
+                .map(|schema| schema.to_owned())
+                .or_else(|| schema.node_schema.clone());
+
+            let schema_id = schema_json.as_deref().and_then(schema_id_from_json);
+
+            if let Some(schema_json) = schema_json.as_deref() {
+                validate_yaml_against_schema(node, schema_json).map_err(|message| {
+                    FlowValidationError::SchemaValidation {
+                        component: component.to_owned(),
+                        index,
+                        message,
+                    }
+                })?;
+            }
+
+            #[cfg(feature = "conformance")]
+            {
+                validate_node(component, node).map_err(|error| {
+                    FlowValidationError::Conformance {
+                        component: component.to_owned(),
+                        index,
+                        error: error.to_string(),
+                    }
+                })?;
+            }
+
+            let defaults = self.registry.get_defaults(component).cloned();
+
+            validated_nodes.push(ValidatedNode {
+                component: component.to_owned(),
+                node_config: node.clone(),
+                schema_json,
+                schema_id,
+                defaults,
+            });
+        }
+
+        Ok(validated_nodes)
+    }
+}
+
+fn nodes_from_document(document: &YamlValue) -> Option<&Vec<YamlValue>> {
+    if let Some(sequence) = document.as_sequence() {
+        return Some(sequence);
+    }
+
+    let mapping = document.as_mapping()?;
+    mapping.get("nodes").and_then(|value| value.as_sequence())
+}
+
+fn component_name(mapping: &serde_yaml::Mapping) -> Option<&str> {
+    mapping
+        .get("component")
+        .and_then(|value| value.as_str())
+        .or_else(|| mapping.get("type").and_then(|value| value.as_str()))
+}
+
+#[derive(Debug)]
+pub enum FlowValidationError {
+    Io {
+        path: PathBuf,
+        error: std::io::Error,
+    },
+    YamlParse {
+        error: String,
+    },
+    MissingNodes,
+    NodeNotMapping {
+        index: usize,
+    },
+    MissingComponent {
+        index: usize,
+    },
+    DescribeFailed {
+        component: String,
+        error: String,
+    },
+    SchemaValidation {
+        component: String,
+        index: usize,
+        message: String,
+    },
+    #[cfg(feature = "conformance")]
+    Conformance {
+        component: String,
+        index: usize,
+        error: String,
+    },
+}
+
+impl fmt::Display for FlowValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FlowValidationError::Io { path, error } => {
+                write!(f, "Failed to read flow file `{}`: {error}", path.display())
+            }
+            FlowValidationError::YamlParse { error } => {
+                write!(f, "Failed to parse flow YAML: {error}")
+            }
+            FlowValidationError::MissingNodes => {
+                write!(f, "Flow document is missing a `nodes` array")
+            }
+            FlowValidationError::NodeNotMapping { index } => {
+                write!(f, "Node at index {index} must be a mapping/object")
+            }
+            FlowValidationError::MissingComponent { index } => {
+                write!(f, "Node at index {index} is missing a `component` field")
+            }
+            FlowValidationError::DescribeFailed { component, error } => {
+                write!(f, "Failed to describe component `{component}`: {error}")
+            }
+            FlowValidationError::SchemaValidation {
+                component,
+                index,
+                message,
+            } => {
+                write!(
+                    f,
+                    "Schema validation failed for node {index} (`{component}`): {message}"
+                )
+            }
+            #[cfg(feature = "conformance")]
+            FlowValidationError::Conformance {
+                component,
+                index,
+                error,
+            } => {
+                write!(
+                    f,
+                    "Conformance validation failed for node {index} (`{component}`): {error}"
+                )
+            }
+        }
+    }
+}
+
+impl Error for FlowValidationError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            FlowValidationError::Io { error, .. } => Some(error),
+            _ => None,
+        }
+    }
+}

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Rust fmt • clippy • build • tests • schema-validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [ stable ]
+        features: [ "", "conformance" ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (${{ matrix.rust }})
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Build (features=${{ matrix.features || 'default' }})
+        run: |
+          if [ -z "${{ matrix.features }}" ]; then
+            cargo build --workspace --locked
+          else
+            cargo build --workspace --locked --features ${{ matrix.features }}
+          fi
+
+      - name: Tests (features=${{ matrix.features || 'default' }})
+        run: |
+          if [ -z "${{ matrix.features }}" ]; then
+            cargo test --workspace --locked --all-targets
+          else
+            cargo test --workspace --locked --all-targets --features ${{ matrix.features }}
+          fi
+
+      - name: Schema Validate Examples (dry run)
+        run: |
+          if ls examples/flows/*.yaml >/dev/null 2>&1; then
+            for f in examples/flows/*.yaml; do
+              echo "Validating $f"
+              cargo run -p greentic-dev -- run -f "$f" --validate-only
+            done
+          else
+            echo "No example flows to validate."
+          fi
+
+      - name: Upload transcripts (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: transcripts-${{ matrix.features || 'default' }}
+          path: .greentic/transcripts
+          if-no-files-found: ignore
