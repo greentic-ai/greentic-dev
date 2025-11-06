@@ -19,11 +19,29 @@ If you want to:
 |-----------------------|------------------------------------------------------------------------------------------|
 | `crates/dev-runner`   | Validates flows by compiling each node’s describe() schema and optional conformance kit. |
 | `crates/dev-viewer`   | Renders transcripts and highlights defaults/overrides so you can reason about configs.    |
-| `xtask`               | Provides `cargo xtask new-component <name>` scaffolding and helper scripts.              |
+| `greentic-dev component …` | Scaffolds, validates, and packs components (reusing the internal xtask tooling).    |
 | `docs/`               | High-level guides (runner, mocks, viewer, scaffolder, developer guide).                  |
 | `scripts/build_pages.py` | Builds the GitHub Pages site by combining Rustdoc output with the markdown guides.    |
 
 You will also find mock-service helpers for HTTP, NATS, and vault-like secrets in `dev-runner`, ready to be wired into flows.
+
+---
+
+## Install
+
+From a local checkout:
+
+```bash
+cargo install --path .
+```
+
+Or pull straight from the repository:
+
+```bash
+cargo install --git https://github.com/greentic-ai/greentic-dev greentic-dev
+```
+
+Once installed, `greentic-dev` becomes a single entry point for both flow validation (`greentic-dev run …`) and component tooling (`greentic-dev component …`).
 
 ---
 
@@ -82,10 +100,10 @@ so you immediately know which fields rely on defaults versus user input.
 
 Below is the workflow we follow when creating a new component that we can validate and iterate locally. Each step highlights **why** it matters inside the Greentic ecosystem.
 
-### 1. Scaffold with `cargo xtask`
+### 1. Scaffold with `greentic-dev component`
 
 ```bash
-cargo run -p xtask -- new-component my-component
+greentic-dev component new my-component
 cd component-my-component
 ```
 
@@ -119,16 +137,16 @@ The template already exports `greentic:component/node` and echoes a `message`. R
 ### 4. Build and validate
 
 ```bash
-cargo component build --release
-cargo run -p xtask -- validate --path .
+cargo component build --release --target wasm32-wasip2
+greentic-dev component validate --path .
 ```
 
-**Why**: `cargo component` produces the WASM artifact using only the vendored WIT, which keeps builds reproducible. `xtask validate` confirms the artifact and metadata agree (WIT package IDs, world name, version pins) and, when WASI shims exist, inspects the manifest via the component runtime. If WASI support is missing locally, validation still passes but prints a warning that manifest inspection was skipped.
+**Why**: `cargo component` produces a Preview 2 component (`wasm32-wasip2`) using only the vendored WIT, which keeps builds reproducible. `greentic-dev component validate` confirms the artifact and metadata agree (WIT package IDs, world name, version pins) and, when WASI shims exist, inspects the manifest via the component runtime. If WASI support is missing locally, validation still passes but prints a warning that manifest inspection was skipped.
 
 ### 5. Package for distribution (optional)
 
 ```bash
-cargo run -p xtask -- pack --path .
+greentic-dev component pack --path .
 ```
 
 Creates `packs/my-component/0.1.0/` with the `.wasm`, `meta.json` (provider metadata + SHA + timestamp), and `SHA256SUMS`. Use this output when publishing or handing the component to downstream teams.

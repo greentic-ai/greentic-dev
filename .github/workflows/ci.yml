@@ -58,6 +58,16 @@ jobs:
             cargo test --workspace --locked --all-targets --features ${{ matrix.features }}
           fi
 
+      - name: Install greentic-dev CLI
+        if: ${{ matrix.features == '' }}
+        run: cargo install --path . --force
+
+      - name: CLI smoke test
+        if: ${{ matrix.features == '' }}
+        run: |
+          ~/.cargo/bin/greentic-dev --help
+          ~/.cargo/bin/greentic-dev component --help
+
       - name: Schema Validate Examples (dry run)
         run: |
           if ls examples/flows/*.yaml >/dev/null 2>&1; then

@@ -6,6 +6,7 @@ use dev_runner::{
     ComponentSchema, DescribeRegistry, FlowTranscript, FlowValidator, StaticComponentDescriber,
     TranscriptStore, schema_id_from_json,
 };
+use xtask::{ComponentCommands, run_component_command};
 
 fn main() {
     if let Err(error) = run() {
@@ -19,6 +20,7 @@ fn run() -> Result<()> {
 
     match cli.command {
         Commands::Run(args) => run_flow(args),
+        Commands::Component(cmd) => run_component_command(cmd),
     }
 }
 
@@ -83,6 +85,9 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Run(RunArgs),
+    /// Component scaffolding and validation commands
+    #[command(subcommand)]
+    Component(ComponentCommands),
 }
 
 #[derive(Args)]

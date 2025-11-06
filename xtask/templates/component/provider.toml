@@ -32,7 +32,7 @@ requires = []
 # --- pack/build ---
 [artifact]
 format  = "wasm-component"
-path    = "target/wasm32-wasip1/release/{{component_crate}}.wasm"
+path    = "target/wasm32-wasip2/release/{{component_crate}}.wasm"
 sha256  = ""
 created = ""
 

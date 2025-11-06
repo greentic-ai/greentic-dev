@@ -15,7 +15,7 @@ This guide walks from a clean workstation all the way to a “hello world” Gre
 
 2. **Add the WASI target required by `cargo component`.**
    ```bash
-   rustup target add wasm32-wasip1
+   rustup target add wasm32-wasip2
    ```
 
 3. **Install component tooling.**
@@ -27,6 +27,14 @@ This guide walks from a clean workstation all the way to a “hello world” Gre
 4. **(Optional) Install supporting CLI tools.**
    - `cargo install wasm-tools --locked` if you want to inspect component metadata with `wasm-tools component wit`.
    - `cargo install just` if you prefer using the repo’s shorthand tasks.
+
+5. **(Optional) Install `greentic-dev` globally.**
+   ```bash
+   cargo install --path .
+   # or from GitHub:
+   cargo install --git https://github.com/greentic-ai/greentic-dev greentic-dev
+   ```
+   Installing the CLI lets you run `greentic-dev component …` without prefixing commands with `cargo run -p`.
 
 ---
 
@@ -50,12 +58,14 @@ cargo test
 
 ## 3. Scaffold a hello world component
 
-Use the `xtask` scaffolder to generate a new component skeleton. This populates a ready-to-build WASM package, provider metadata, schema, and docs.
+Use the `greentic-dev` CLI to generate a new component skeleton. This populates a ready-to-build WASM package, provider metadata, schema, and docs.
 
 ```bash
-cargo run -p xtask -- new-component hello-world
+greentic-dev component new hello-world
 cd component-hello-world
 ```
+
+> Running directly from the repo? Use `cargo run -p greentic-dev -- component new hello-world`.
 
 The scaffold contains:
 
@@ -77,28 +87,28 @@ Open `src/lib.rs` and confirm the stub echoes the `message` field back to the ca
 From inside the component directory:
 
 ```bash
-cargo component build --release
+cargo component build --release --target wasm32-wasip2
 ```
 
-This emits `target/wasm32-wasip1/release/hello-world.wasm` using only the vendored WIT dependencies.
+This emits `target/wasm32-wasip2/release/hello-world.wasm` using only the vendored WIT dependencies.
 
 If you ever see a network-related error, double-check that `cargo fetch` succeeded earlier. The Greentic scaffolder assumes offline builds, so the `cargo` registry cache needs to be populated once up front.
 
 ---
 
-## 5. Validate with the Greentic xtask
+## 5. Validate with the greentic-dev CLI
 
 Return to the workspace root (or pass the component path explicitly) and run the validator. It compiles (if you didn’t already), decodes the embedded WIT packages, and checks your metadata.
 
 ```bash
-cargo run -p xtask -- validate --path component-hello-world
+greentic-dev component validate --path component-hello-world
 ```
 
 You should see output similar to:
 
 ```
 ✓ Validated hello-world 0.1.0
-  artifact: .../component-hello-world/target/wasm32-wasip1/release/hello-world.wasm
+  artifact: .../component-hello-world/target/wasm32-wasip2/release/hello-world.wasm
   sha256 : <hash>
   world  : root:component/root
   packages:
@@ -119,7 +129,7 @@ If validation fails, fix the reported issue (wrong version pins, missing artifac
 When you are ready to distribute your build artifact, let the `pack` subcommand produce a canonical bundle:
 
 ```bash
-cargo run -p xtask -- pack --path component-hello-world
+greentic-dev component pack --path component-hello-world
 ```
 
 This writes:
@@ -178,17 +188,17 @@ Once the component is ready, integrate it into CI using the guidance in `docs/sc
 
 ```
 # one-time setup
-rustup target add wasm32-wasip1
+rustup target add wasm32-wasip2
 cargo install cargo-component --locked
 
 # scaffold
-cargo run -p xtask -- new-component hello-world
+greentic-dev component new hello-world
 cd component-hello-world
 
 # develop
-cargo component build --release
-cargo run -p xtask -- validate --path .
-cargo run -p xtask -- pack --path .      # optional
+cargo component build --release --target wasm32-wasip2
+greentic-dev component validate --path .
+greentic-dev component pack --path .      # optional
 ```
 
 You now have a fully reproducible path from a fresh machine to a validated Greentic component. Happy building!

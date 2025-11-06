@@ -1,4 +1,4 @@
-# Component Scaffolder (`cargo xtask new-component`)
+# Component Scaffolder (`greentic-dev component`)
 
 The scaffolder now emits a lean component workspace that builds with `cargo component`, ships its own WIT dependencies, and exposes provider metadata out of the box. This guide walks through what the scaffold contains and how to iterate on it.
 
@@ -26,7 +26,7 @@ component-<name>/
 ### Key files
 
 - **`Cargo.toml`** – Minimal manifest that depends on `wit-bindgen` 0.44, `serde`, and `serde_json`, and configures `package.metadata.component` so `cargo component build` targets the vendored `wit/` directory.
-- **`provider.toml`** – Canonical metadata (name, version, ABI pins, capabilities, artifact location). `xtask validate` and `xtask pack` both consume this file.
+- **`provider.toml`** – Canonical metadata (name, version, ABI pins, capabilities, artifact location). `greentic-dev component validate` and `greentic-dev component pack` both consume this file.
 - **`README.md`** – Quickstart for the component author (build, validate, pack).
 - **`schemas/v1/config.schema.json`** – Draft 7 JSON Schema for the node configuration used by the runner and transcripts.
 - **`src/lib.rs`** – Hello-world implementation generated via `wit_bindgen::generate!`. It exports the `greentic:component/node` world and echoes an input `message`.
@@ -39,13 +39,13 @@ Older assets (`src/describe.rs`, `tests/schema_validates_examples.rs`, `examples
 
 ## Typical workflow inside the scaffold
 
-1. **Build:** `cargo component build --release`  
-   Compiles to `target/wasm32-wasip1/release/<name>.wasm`. The scaffolder sets `CARGO_COMPONENT_CACHE_DIR` to a local folder so the command works offline once the cargo cache is warmed.
+1. **Build:** `cargo component build --release --target wasm32-wasip2`  
+   Compiles to `target/wasm32-wasip2/release/<name>.wasm`. The scaffolder sets `CARGO_COMPONENT_CACHE_DIR` to a local folder so the command works offline once the cargo cache is warmed.
 
-2. **Validate:** `cargo run -p xtask -- validate --path .`  
+2. **Validate:** `greentic-dev component validate --path .`  
    Checks that the artifact exists, decodes WIT metadata, compares it against `provider.toml`, and (if WASI host shims are present) inspects the manifest via `component-runtime`. Missing WASI support produces a warning but doesn’t fail validation.
 
-3. **Pack (optional):** `cargo run -p xtask -- pack --path .`  
+3. **Pack (optional):** `greentic-dev component pack --path .`  
    Copies the `.wasm`, writes `meta.json` (provider metadata + sha + timestamp), and generates `SHA256SUMS` under `packs/<name>/<version>/`.
 
 4. **Wire into flows:** Back in the main workspace, point a flow node at the component (`using: <name>`) and run `cargo run -p greentic-dev -- run -f <flow>.yaml --validate-only`.
@@ -63,11 +63,11 @@ Older assets (`src/describe.rs`, `tests/schema_validates_examples.rs`, `examples
 
 ## FAQ
 
-**Why does `xtask validate` sometimes skip manifest exports?**  
+**Why does `greentic-dev component validate` sometimes skip manifest exports?**  
 Until the runtime bundles WASI Preview 2 shims, components that import `wasi:*` interfaces cannot be instantiated locally. The validator spots this case, prints a warning, and finishes without the runtime checks.
 
 **Can I regenerate WIT deps when Greentic interfaces upgrade?**  
-Yes. Update the Greentic workspace to the new crate versions, rerun `cargo run -p xtask -- new-component ...` for a fresh scaffold, or manually re-vendor the directories and adjust `provider.toml`.
+Yes. Update the Greentic workspace to the new crate versions, rerun `greentic-dev component new ...` for a fresh scaffold, or manually re-vendor the directories and adjust `provider.toml`.
 
 **Where did the old `describe.rs` go?**  
 The WASM component now exposes `describe` capabilities directly through `wit_bindgen` exports. The CLI runner prefers the schema that comes from the component artifact, so no extra stub is needed in the scaffold.

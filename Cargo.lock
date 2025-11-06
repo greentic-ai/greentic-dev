@@ -966,6 +966,7 @@ dependencies = [
  "dev-runner",
  "greentic-conformance",
  "serde_yaml_bw",
+ "xtask",
 ]
 
 [[package]]
