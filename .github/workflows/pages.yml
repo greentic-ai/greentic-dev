@@ -23,10 +23,11 @@ jobs:
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
-      - name: Build viewer/site
+      - name: Build docs (cargo doc)
         run: |
+          cargo doc --workspace --no-deps
           mkdir -p dist
-          echo '<html><body>greentic-dev docs</body></html>' > dist/index.html
+          cp -R target/doc/* dist/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
