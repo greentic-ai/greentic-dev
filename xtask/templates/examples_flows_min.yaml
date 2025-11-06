@@ -1,5 +1,0 @@
-nodes:
-  - id: {{component_kebab}}-node
-    component: {{component_name}}
-    inputs:
-      message: "Hello from {{component_name}}"

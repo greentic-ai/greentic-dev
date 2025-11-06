@@ -1,0 +1,6 @@
+package greentic-ai:{{component_kebab}}@0.1.0;
+
+world component {
+  import greentic:component/control@{{component_world_version}};
+  export greentic:component/node@{{component_world_version}};
+}

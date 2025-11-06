@@ -1,0 +1,42 @@
+# --- identity ---
+name        = "{{component_name}}"
+version     = "0.1.0"
+description = "Minimal Greentic component scaffold"
+license     = "MIT"
+homepage    = "https://github.com/greentic-ai/{{component_name}}"
+
+# --- platform/ABI contracts ---
+[abi]
+interfaces_version = "{{interfaces_version}}"
+types_version      = "{{types_version}}"
+component_runtime  = "{{component_runtime_version}}"
+world              = "greentic:component/world@{{component_world_version}}"
+wit_packages = [
+  "greentic:component@{{component_world_version}}"
+]
+
+# --- runtime capabilities ---
+[capabilities]
+secrets    = false
+telemetry  = true
+network    = false
+filesystem = false
+
+# --- exports/imports ---
+[exports]
+provides = ["meta", "invoke"]
+
+[imports]
+requires = []
+
+# --- pack/build ---
+[artifact]
+format  = "wasm-component"
+path    = "target/wasm32-wasip1/release/{{component_crate}}.wasm"
+sha256  = ""
+created = ""
+
+# --- docs ---
+[docs]
+readme  = "README.md"
+schemas = ["schemas/v1/config.schema.json"]

@@ -1,0 +1,29 @@
+[package]
+name = "{{component_crate}}"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = { version = "0.44", default-features = false, features = ["macros"] }
+wit-bindgen-rt = "0.44"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[package.metadata.component]
+package = "greentic-ai:{{component_kebab}}"
+
+[package.metadata.component.target]
+path = "wit"
+world = "component"
+
+[package.metadata.component.target.dependencies]
+"greentic:component" = { path = "wit/deps/greentic-component-{{component_world_version}}" }
+"greentic:host-import" = { path = "wit/deps/greentic-host-import-{{host_import_version}}" }
+"greentic:types-core" = { path = "wit/deps/greentic-types-core-{{types_core_version}}" }
+
+[workspace]
+members = []
