@@ -963,10 +963,23 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "component-runtime",
+ "component-store",
+ "convert_case",
  "dev-runner",
  "greentic-conformance",
+ "greentic-interfaces",
+ "greentic-types 0.1.6",
+ "once_cell",
+ "semver",
+ "serde",
+ "serde_json",
  "serde_yaml_bw",
- "xtask",
+ "sha2",
+ "time",
+ "toml",
+ "wit-component",
+ "wit-parser 0.240.0",
 ]
 
 [[package]]
@@ -3743,22 +3756,8 @@ checksum = "9edde0db4769d2dc68579893f2306b26c6ecfbe0ef499b013d731b7b9247e0b9"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "clap",
- "component-runtime",
- "component-store",
- "convert_case",
- "greentic-interfaces",
- "greentic-types 0.1.6",
- "once_cell",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "time",
- "toml",
- "wit-component",
- "wit-parser 0.240.0",
+ "greentic-dev",
 ]
 
 [[package]]

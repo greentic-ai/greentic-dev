@@ -1,1 +1,5 @@
-pub use dev_runner::{registry, transcript};
+pub mod component_cli;
+
+pub mod registry {
+    pub use dev_runner::DescribeRegistry;
+}

@@ -29,16 +29,18 @@ You will also find mock-service helpers for HTTP, NATS, and vault-like secrets i
 
 ## Install
 
-From a local checkout:
+From crates.io:
 
 ```bash
-cargo install --path .
+cargo install greentic-dev
 ```
 
-Or pull straight from the repository:
+Need the latest commit or working from a fork?
 
 ```bash
 cargo install --git https://github.com/greentic-ai/greentic-dev greentic-dev
+# or from the current checkout
+cargo install --path .
 ```
 
 Once installed, `greentic-dev` becomes a single entry point for both flow validation (`greentic-dev run …`) and component tooling (`greentic-dev component …`).

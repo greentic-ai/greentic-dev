@@ -30,9 +30,13 @@ This guide walks from a clean workstation all the way to a “hello world” Gre
 
 5. **(Optional) Install `greentic-dev` globally.**
    ```bash
-   cargo install --path .
-   # or from GitHub:
+   cargo install greentic-dev
+   ```
+   For the latest commit or local forks:
+   ```bash
    cargo install --git https://github.com/greentic-ai/greentic-dev greentic-dev
+   # or from the current checkout
+   cargo install --path .
    ```
    Installing the CLI lets you run `greentic-dev component …` without prefixing commands with `cargo run -p`.
 

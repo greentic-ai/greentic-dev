@@ -6,7 +6,7 @@ use dev_runner::{
     ComponentSchema, DescribeRegistry, FlowTranscript, FlowValidator, StaticComponentDescriber,
     TranscriptStore, schema_id_from_json,
 };
-use xtask::{ComponentCommands, run_component_command};
+use greentic_dev::component_cli::{ComponentCommands, run_component_command};
 
 fn main() {
     if let Err(error) = run() {

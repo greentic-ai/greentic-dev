@@ -24,37 +24,31 @@ use time::format_description::well_known::Rfc3339;
 use wit_component::{DecodedWasm, decode as decode_component};
 use wit_parser::{Resolve, WorldId, WorldItem};
 
-static WORKSPACE_ROOT: Lazy<PathBuf> = Lazy::new(|| {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest_dir
-        .parent()
-        .expect("xtask is located inside the workspace root")
-        .to_path_buf()
-});
+static WORKSPACE_ROOT: Lazy<PathBuf> = Lazy::new(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")));
 
 const TEMPLATE_COMPONENT_CARGO: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/Cargo.toml"
+    "/xtask/templates/component/Cargo.toml"
 ));
 const TEMPLATE_SRC_LIB: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/src/lib.rs"
+    "/xtask/templates/component/src/lib.rs"
 ));
 const TEMPLATE_PROVIDER: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/provider.toml"
+    "/xtask/templates/component/provider.toml"
 ));
 const TEMPLATE_SCHEMA_CONFIG: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/schemas/v1/config.schema.json"
+    "/xtask/templates/component/schemas/v1/config.schema.json"
 ));
 const TEMPLATE_README: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/README.md"
+    "/xtask/templates/component/README.md"
 ));
 const TEMPLATE_WORLD: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/wit/world.wit"
+    "/xtask/templates/component/wit/world.wit"
 ));
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -281,12 +275,10 @@ pub fn new_component(args: NewComponentArgs) -> Result<()> {
         component_dir.display()
     );
 
-    // Pre-create directory structure.
     create_dir(component_dir.join("src"))?;
     create_dir(component_dir.join("schemas/v1"))?;
     create_dir(component_dir.join("wit/deps"))?;
 
-    // Write templated files.
     write_template(
         &component_dir.join("Cargo.toml"),
         TEMPLATE_COMPONENT_CARGO,

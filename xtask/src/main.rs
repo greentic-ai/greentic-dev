@@ -1,5 +1,5 @@
 use clap::Parser;
-use xtask::{ComponentCommands, run_component_command};
+use greentic_dev::component_cli::{ComponentCommands, run_component_command};
 
 #[derive(Parser)]
 #[command(name = "xtask")]
