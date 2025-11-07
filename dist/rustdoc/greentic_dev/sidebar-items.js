@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["registry","transcript"]};
+window.SIDEBAR_ITEMS = {"mod":["component_cli","registry"]};

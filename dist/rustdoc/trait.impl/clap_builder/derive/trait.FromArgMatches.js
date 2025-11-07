@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["dev_viewer",[["impl FromArgMatches for <a class=\"struct\" href=\"dev_viewer/struct.Cli.html\" title=\"struct dev_viewer::Cli\">Cli</a>"]]],["xtask",[["impl FromArgMatches for <a class=\"enum\" href=\"xtask/enum.Commands.html\" title=\"enum xtask::Commands\">Commands</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"xtask/struct.Cli.html\" title=\"struct xtask::Cli\">Cli</a>"]]]]);
+    var implementors = Object.fromEntries([["dev_viewer",[["impl FromArgMatches for <a class=\"struct\" href=\"dev_viewer/struct.Cli.html\" title=\"struct dev_viewer::Cli\">Cli</a>"]]],["greentic_dev",[["impl FromArgMatches for <a class=\"enum\" href=\"greentic_dev/component_cli/enum.ComponentCommands.html\" title=\"enum greentic_dev::component_cli::ComponentCommands\">ComponentCommands</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"greentic_dev/component_cli/struct.DemoRunArgs.html\" title=\"struct greentic_dev::component_cli::DemoRunArgs\">DemoRunArgs</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"greentic_dev/component_cli/struct.NewComponentArgs.html\" title=\"struct greentic_dev::component_cli::NewComponentArgs\">NewComponentArgs</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"greentic_dev/component_cli/struct.PackArgs.html\" title=\"struct greentic_dev::component_cli::PackArgs\">PackArgs</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"greentic_dev/component_cli/struct.ValidateArgs.html\" title=\"struct greentic_dev::component_cli::ValidateArgs\">ValidateArgs</a>"]]],["xtask",[["impl FromArgMatches for <a class=\"enum\" href=\"xtask/enum.Commands.html\" title=\"enum xtask::Commands\">Commands</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"xtask/struct.Cli.html\" title=\"struct xtask::Cli\">Cli</a>"]]],["xtask",[["impl FromArgMatches for <a class=\"struct\" href=\"xtask/struct.Cli.html\" title=\"struct xtask::Cli\">Cli</a>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[141,251]}
+//{"start":57,"fragment_lengths":[141,950,251,127]}

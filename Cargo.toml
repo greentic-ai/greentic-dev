@@ -1,6 +1,6 @@
 [package]
 name = "greentic-dev"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
 
 [workspace]
@@ -9,6 +9,7 @@ members = ["crates/dev-runner", "crates/dev-viewer", "xtask"]
 [features]
 default = []
 conformance = ["greentic-conformance", "dev-runner/conformance"]
+mcp = ["greentic-mcp", "greentic-interfaces/runner-host-v1"]
 
 [dependencies]
 anyhow = "1.0"
@@ -17,16 +18,24 @@ dev-runner = { path = "crates/dev-runner", version = "0.1.0" }
 serde_yaml_bw = "2"
 greentic-conformance = { version = "0.1", optional = true }
 once_cell = "1.19"
-convert_case = "0.6"
+convert_case = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.9"
 semver = "1.0"
 sha2 = "0.10"
 time = { version = "0.3", features = ["macros", "formatting"] }
-component-store = "0.2.0"
-wit-component = "0.240.0"
-wit-parser = "0.240.0"
-greentic-interfaces = { version = "0.4.19" }
-greentic-types = { version = "0.1.6", features = ["serde"] }
-component-runtime = { version = "0.2.0" }
+component-store = "0.3"
+wit-component = "0.240"
+wit-parser = "0.240"
+greentic-interfaces = { version = "0.4", default-features = false, features = ["describe-v1"] }
+greentic-types = { version = "0.3", features = ["serde"] }
+greentic-types-compat = { package = "greentic-types", version = "0.1.6", features = ["serde"] } # TODO(PR-DV-00): drop once component-runtime depends on greentic-types 0.3+
+component-runtime = { version = "0.3" }
+greentic-flow = "0.3"
+greentic-pack = "0.3"
+greentic-runner = "0.3"
+greentic-component = { version = "0.3", features = ["prepare", "describe"] }
+greentic-mcp = { version = "0.3", optional = true }
+jsonschema = "0.33"
+tempfile = "3"

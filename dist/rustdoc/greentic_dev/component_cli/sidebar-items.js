@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ComponentCommands"],"fn":["demo_run_command","new_component","pack_command","run_component_command","validate_command"],"struct":["DemoRunArgs","NewComponentArgs","PackArgs","ValidateArgs"]};

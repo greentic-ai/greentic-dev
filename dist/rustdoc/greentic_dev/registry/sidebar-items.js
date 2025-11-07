@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ComponentStub","DescribeRegistry"]};
+window.SIDEBAR_ITEMS = {"struct":["DescribeRegistry"]};

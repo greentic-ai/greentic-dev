@@ -33,7 +33,7 @@ component-<name>/
 - **`wit/world.wit`** – Declares the component’s world and imports the Greentic schema packages.
 - **`wit/deps/*`** – Vendored WIT packages resolved from the Greentic interfaces version currently pinned in the main workspace `Cargo.lock`. These keep component builds offline and deterministic.
 
-Older assets (`src/describe.rs`, `tests/schema_validates_examples.rs`, `examples/flows/min.yaml`, `.github/workflows/ci.yml`) are intentionally no longer generated; they live in the main repository instead.
+Older assets (`src/describe.rs`, `tests/schema_validates_examples.rs`, `examples/flows/min.ygtc`, `.github/workflows/ci.yml`) are intentionally no longer generated; they live in the main repository instead.
 
 ---
 
@@ -48,7 +48,7 @@ Older assets (`src/describe.rs`, `tests/schema_validates_examples.rs`, `examples
 3. **Pack (optional):** `greentic-dev component pack --path .`  
    Copies the `.wasm`, writes `meta.json` (provider metadata + sha + timestamp), and generates `SHA256SUMS` under `packs/<name>/<version>/`.
 
-4. **Wire into flows:** Back in the main workspace, point a flow node at the component (`using: <name>`) and run `greentic-dev run -f <flow>.yaml --validate-only` (or `cargo run -p greentic-dev -- run …` during local development).
+4. **Wire into flows:** Back in the main workspace, point a flow node at the component (`using: <name>`) and run `greentic-dev flow validate -f <flow>.ygtc --json` (or `cargo run -p greentic-dev -- flow …` during local development). When you are ready to exercise the pack end-to-end, follow up with `greentic-dev pack build …` and `greentic-dev pack run …`.
 
 ---
 

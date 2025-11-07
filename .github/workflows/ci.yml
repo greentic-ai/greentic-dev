@@ -39,6 +39,9 @@ jobs:
       - name: Cargo fmt
         run: cargo fmt --all -- --check
 
+      - name: Check greentic-types compat shim
+        run: python3 scripts/check_types_compat.py
+
       - name: Cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
@@ -66,18 +69,24 @@ jobs:
         if: ${{ matrix.features == '' }}
         run: |
           ~/.cargo/bin/greentic-dev --help
+          ~/.cargo/bin/greentic-dev flow --help
           ~/.cargo/bin/greentic-dev component --help
 
-      - name: Schema Validate Examples (dry run)
-        run: |
-          if ls examples/flows/*.yaml >/dev/null 2>&1; then
-            for f in examples/flows/*.yaml; do
-              echo "Validating $f"
-              cargo run -p greentic-dev -- run -f "$f" --validate-only
-            done
-          else
-            echo "No example flows to validate."
-          fi
+      - name: Flow validate smoke
+        if: ${{ matrix.features == '' }}
+        run: ~/.cargo/bin/greentic-dev flow validate -f examples/flows/min.ygtc --json
+
+      - name: Pack build smoke
+        if: ${{ matrix.features == '' }}
+        run: ~/.cargo/bin/greentic-dev pack build -f examples/flows/min.ygtc -o dist/ci-demo.gtpack --component-dir fixtures/components
+
+      - name: Upload demo pack
+        if: ${{ matrix.features == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-pack
+          path: dist/ci-demo.gtpack
+          if-no-files-found: error
 
       - name: Upload transcripts (if any)
         if: always()

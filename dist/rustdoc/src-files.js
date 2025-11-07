@@ -1,2 +1,2 @@
-createSrcSidebar('[["dev_runner",["",[],["lib.rs","registry.rs","runner.rs","schema.rs","transcript.rs"]]],["dev_viewer",["",[],["main.rs"]]],["greentic_dev",["",[],["lib.rs"]]],["xtask",["",[],["main.rs"]]]]');
-//{"start":19,"fragment_lengths":[87,35,36,30]}
+createSrcSidebar('[["dev_runner",["",[],["lib.rs","registry.rs","runner.rs","schema.rs","transcript.rs"]]],["dev_viewer",["",[],["main.rs"]]],["greentic_dev",["",[],["component_cli.rs","lib.rs"]]],["greentic_dev",["",[],["lib.rs"]]],["xtask",["",[],["main.rs"]]]]');
+//{"start":19,"fragment_lengths":[87,35,55,36,30]}

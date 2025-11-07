@@ -164,15 +164,15 @@ nodes:
 YAML
 ```
 
-Run the dev runner in validation mode to ensure the flow and schema line up:
+Run the flow validator to ensure the flow and schema line up:
 
 ```bash
-greentic-dev run -f examples/flows/hello-world.yaml --validate-only
+greentic-dev flow validate -f examples/flows/hello-world.yaml --json
 ```
 
-> Prefer running straight from the workspace? Use `cargo run -p greentic-dev -- run …` instead.
+> Prefer running straight from the workspace? Use `cargo run -p greentic-dev -- flow …` instead.
 
-Successful validation will drop a transcript under `.greentic/transcripts/` that you can inspect with the viewer (`cargo run -p dev-viewer -- --file <path>`).
+Successful validation produces canonical JSON you can feed into review tools. When you are ready to execute the full pack, run `greentic-dev pack build …` followed by `greentic-dev pack run …` to generate transcripts under `.greentic/runs/`.
 
 ---
 

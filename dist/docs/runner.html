@@ -31,7 +31,7 @@ The `greentic-dev` runner is built around schema awareness. Every node in a flow
 The runner exposes a dedicated validation mode via:
 
 ```bash
-cargo run -p greentic-dev -- run -f examples/flows/min.yaml --validate-only
+greentic-dev flow validate -f examples/flows/min.ygtc --json
 ```
 
 In validation mode the CLI:
@@ -43,7 +43,9 @@ In validation mode the CLI:
 
 Because validation skips tool execution it is fast and safe to run in CI.
 
-Running without `--validate-only` currently performs the same validation steps and then exits. Future work will add actual execution after schema checks pass.
+&gt; Developing from source without installing the binary? Use `cargo run -p greentic-dev -- flow …` instead.
+
+Need to execute flows end-to-end? Build a pack via `greentic-dev pack build …` and run it with `greentic-dev pack run …` which uses the desktop runner plus mocks/telemetry hooks.
 
 ## Discovering schemas
 

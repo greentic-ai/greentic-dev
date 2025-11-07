@@ -14,6 +14,7 @@ use component_runtime::{
 use component_store::ComponentStore;
 use convert_case::{Case, Casing};
 use greentic_types::{EnvId, TenantCtx as FlowTenantCtx, TenantId};
+use greentic_types_compat::TenantCtx as RuntimeTenantCtx;
 use once_cell::sync::Lazy;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -190,7 +191,7 @@ pub enum ComponentCommands {
     New(NewComponentArgs),
     /// Build and validate a component against pinned interfaces
     Validate(ValidateArgs),
-    /// Package a component into packs/<name>/<version>
+    /// Package a component into `packs/<name>/<version>`
     Pack(PackArgs),
     /// Execute a component locally with default mocks
     DemoRun(DemoRunArgs),
@@ -220,7 +221,7 @@ pub struct PackArgs {
     /// Path to the component directory
     #[arg(long, value_name = "PATH", default_value = ".")]
     path: PathBuf,
-    /// Output directory for generated packs (defaults to <component>/packs)
+    /// Output directory for generated packs (defaults to `<component>/packs`)
     #[arg(long, value_name = "DIR")]
     out_dir: Option<PathBuf>,
     /// Skip cargo component build before packing
@@ -450,10 +451,13 @@ pub fn demo_run_command(args: DemoRunArgs) -> Result<()> {
     }
 
     let bindings = Bindings::new(config_value.clone(), provided_secrets);
-    let tenant = FlowTenantCtx::new(EnvId::from("dev"), TenantId::from("demo"));
+    let env = EnvId::new("dev").context("invalid default environment id")?;
+    let tenant_id = TenantId::new("demo").context("invalid default tenant id")?;
+    let tenant = FlowTenantCtx::new(env, tenant_id);
+    let runtime_tenant = flow_ctx_to_runtime_ctx(&tenant)?;
 
     let mut secret_resolver =
-        |key: &str, _ctx: &FlowTenantCtx| -> Result<String, component_runtime::CompError> {
+        |key: &str, _ctx: &RuntimeTenantCtx| -> Result<String, component_runtime::CompError> {
             match env::var(key) {
                 Ok(value) => Ok(value),
                 Err(_) => Err(component_runtime::CompError::Runtime(format!(
@@ -463,9 +467,9 @@ pub fn demo_run_command(args: DemoRunArgs) -> Result<()> {
             }
         };
 
-    component_runtime::bind(&handle, &tenant, &bindings, &mut secret_resolver)
+    component_runtime::bind(&handle, &runtime_tenant, &bindings, &mut secret_resolver)
         .context("failed to bind component configuration")?;
-    let output = component_runtime::invoke(&handle, &operation, &input_value, &tenant)
+    let output = component_runtime::invoke(&handle, &operation, &input_value, &runtime_tenant)
         .context("component invocation failed")?;
 
     println!(
@@ -475,6 +479,13 @@ pub fn demo_run_command(args: DemoRunArgs) -> Result<()> {
     );
 
     Ok(())
+}
+
+fn flow_ctx_to_runtime_ctx(ctx: &FlowTenantCtx) -> Result<RuntimeTenantCtx> {
+    let serialized = serde_json::to_value(ctx)
+        .context("failed to serialize tenant context for runtime mapping")?;
+    serde_json::from_value(serialized)
+        .context("failed to convert tenant context to runtime-compatible version")
 }
 
 fn create_dir(path: PathBuf) -> Result<()> {

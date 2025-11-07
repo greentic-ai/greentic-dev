@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["TranscriptError"],"struct":["FlowTranscript","NodeTranscript","TranscriptStore"]};

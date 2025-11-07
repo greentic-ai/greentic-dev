@@ -43,7 +43,49 @@ cargo install --git https://github.com/greentic-ai/greentic-dev greentic-dev
 cargo install --path .
 ```
 
-Once installed, `greentic-dev` becomes a single entry point for both flow validation (`greentic-dev run …`) and component tooling (`greentic-dev component …`).
+Once installed, `greentic-dev` becomes a single entry point for flow validation (`greentic-dev flow …`), deterministic pack builds (`greentic-dev pack …`), local pack runs, and component/MCP diagnostics.
+
+---
+
+## Quick start: validate → build → run
+
+1. **Validate the flow schema**
+
+   ```bash
+   greentic-dev flow validate -f examples/flows/min.ygtc --json
+   ```
+
+   Prints the canonical `FlowBundle` (including the `hash_blake3`) so you can diff config changes or feed it into CI.
+
+2. **Build a deterministic pack**
+
+   ```bash
+   greentic-dev pack build \
+     -f examples/flows/min.ygtc \
+     -o dist/demo.gtpack \
+     --component-dir fixtures/components
+   ```
+
+   Uses the component resolver to fetch schemas/defaults, validates each node against component-provided describe payloads, and emits a `.gtpack` with stable hashes.
+
+3. **Run the pack locally**
+
+   ```bash
+   greentic-dev pack run \
+     -p dist/demo.gtpack \
+     --mocks on \
+     --allow api.greentic.dev
+   ```
+
+   Spins up the desktop runner with mocks, writes transcripts plus `run.json` under `.greentic/runs/<timestamp>/`, and prints the `RunResult` (status, node summaries, failures) to stdout. Add `--otlp <url>` or `--artifacts <dir>` to forward telemetry or keep outputs elsewhere.
+
+Have an MCP provider to inspect? Enable the optional feature and run:
+
+```bash
+cargo run --features mcp -- mcp doctor fixtures/providers/dev
+```
+
+which validates a `toolmap.yaml` (or directory) and reports tool health before you wire nodes to it.
 
 ---
 
@@ -59,12 +101,12 @@ Flows in Greentic are YAML documents describing a set of nodes. Historically it 
 Because validation happens before execution, you can run it on every commit or as part of CI:
 
 ```bash
-greentic-dev run -f examples/flows/min.yaml --validate-only
+greentic-dev flow validate -f examples/flows/min.ygtc --json
 ```
 
-The `--validate-only` flag is deliberately fast—it skips tool execution but still produces transcripts at `.greentic/transcripts/`.
+The validation command is deliberately fast—it skips tool execution but still produces canonical JSON so you know exactly what would enter the runner.
 
-> If you prefer not to install the CLI globally while developing, use `cargo run -p greentic-dev -- run …` instead.
+> If you prefer not to install the CLI globally while developing, use `cargo run -p greentic-dev -- flow …` instead.
 
 ### Examining the transcript
 
@@ -90,11 +132,14 @@ so you immediately know which fields rely on defaults versus user input.
 
 | Action                          | Command                                                                 |
 |---------------------------------|-------------------------------------------------------------------------|
-| Validate a flow                 | `greentic-dev run -f <flow>.yaml --validate-only`                       |
+| Validate a flow                 | `greentic-dev flow validate -f <flow>.ygtc [--json]`                    |
+| Build a pack                    | `greentic-dev pack build -f <flow>.ygtc -o dist/out.gtpack`             |
+| Run a pack locally              | `greentic-dev pack run -p dist/out.gtpack [--mocks on] [--allow host]`  |
 | View transcript                 | `cargo run -p dev-viewer -- --file .greentic/transcripts/<file>.yaml`   |
 | Scaffold a component            | `greentic-dev component new <name>`                                     |
 | Validate a component            | `greentic-dev component validate --path <dir>`                          |
 | Pack a component                | `greentic-dev component pack --path <dir>`                              |
+| Inspect MCP tool map (feature)  | `greentic-dev mcp doctor <toolmap>`                                     |
 | Run full test suite             | `cargo test` \| `cargo test --features conformance`                     |
 | Lint everything                 | `cargo clippy --all-targets --all-features -- -D warnings`              |
 | Format                          | `cargo fmt`                                                             |
@@ -161,11 +206,12 @@ Creates `packs/my-component/0.1.0/` with the `.wasm`, `meta.json` (provider meta
 Back in the main workspace:
 
 ```bash
-greentic-dev run -f examples/flows/my-component.yaml --validate-only
-cargo run -p dev-viewer -- --file .greentic/transcripts/<file>.yaml
+greentic-dev flow validate -f examples/flows/my-component.ygtc --json
+greentic-dev pack build -f examples/flows/my-component.ygtc -o dist/my-component.gtpack
+greentic-dev pack run -p dist/my-component.gtpack --mocks on
 ```
 
-The runner ensures the flow matches the schema; the viewer shows which values came from defaults versus overrides so you can spot configuration drift quickly. Use the mock services (`docs/mocks.md`) to emulate HTTP/NATS/secret providers while you iterate.
+The validation/build steps ensure the flow matches the schema and the pack stays deterministic; the runner writes transcripts/`run.json` so you can review defaults vs overrides. Use the mock services (`docs/mocks.md`) to emulate HTTP/NATS/secret providers while you iterate, and point the viewer at `.greentic/runs/<timestamp>/transcript.jsonl` (or the YAML artifacts written by older flows) for a detailed walkthrough.
 
 ---
 
@@ -205,14 +251,42 @@ If you need help wiring your component into the larger conformance suites, check
 All commands are available both through the installed binary (`greentic-dev …`) and via `cargo run -p greentic-dev -- …` while developing locally.
 
 ```
-greentic-dev run -f <flow.yaml> [--validate-only] [--print-schemas]
+greentic-dev flow validate -f <flow.ygtc> [--json]
 
-greentic-dev component new <name> [--dir DIR]
-greentic-dev component validate [--path PATH] [--skip-build]
-greentic-dev component pack [--path PATH] [--out-dir DIR] [--skip-build]
-greentic-dev component demo-run [--path PATH] [--artifact FILE]
-                               [--operation NAME] [--input JSON]
-                               [--config FILE] [--skip-build]
+greentic-dev pack build -f <flow.ygtc> -o <out.gtpack>
+                        [--sign dev|none] [--meta pack.toml]
+                        [--component-dir DIR]
+
+greentic-dev pack run -p <pack.gtpack>
+                      [--entry FLOW] [--input JSON]
+                      [--policy strict|devok]
+                      [--otlp URL] [--allow host[,..]]
+                      [--mocks on|off] [--artifacts DIR]
+
+greentic-dev component inspect <path|id> [--json]
+greentic-dev component doctor <path|id>
+
+greentic-dev mcp doctor <toolmap|provider> [--json]    # feature = "mcp"
+```
+
+## Local CI checks
+
+Mirror the GitHub Actions pipeline locally with:
+
+```bash
+ci/local_check.sh
+```
+
+Toggles:
+
+* `LOCAL_CHECK_ONLINE=0` – skip networked steps (default is online).
+* `LOCAL_CHECK_STRICT=1` – treat missing tools as fatal, enable extra checks.
+* `LOCAL_CHECK_VERBOSE=1` – echo each command (set `bash -x`).
+
+Example:
+
+```bash
+LOCAL_CHECK_ONLINE=0 LOCAL_CHECK_STRICT=1 ci/local_check.sh
 ```
 
 - **`run`**: Compile each node schema and validate a flow YAML. `--print-schemas` lists registry stubs. `--validate-only` skips execution (flow execution is still under development).

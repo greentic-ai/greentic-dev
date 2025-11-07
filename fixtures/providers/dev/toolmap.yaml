@@ -1,0 +1,6 @@
+tools:
+  - name: dev.echo
+    component: ../../components/dev.greentic.echo/component.wasm
+    entry: describe
+    timeout_ms: 1000
+    max_retries: 0

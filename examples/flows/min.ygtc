@@ -1,0 +1,11 @@
+id: dev_echo_flow
+title: Dev Echo Flow
+description: Minimal flow used for CI smoke tests
+type: messaging
+entry: start
+nodes:
+  start:
+    dev.greentic.echo:
+      message: "Hello from greentic-dev"
+    routing:
+      - out: true

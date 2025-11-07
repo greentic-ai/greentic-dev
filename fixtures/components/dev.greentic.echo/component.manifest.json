@@ -1,0 +1,33 @@
+{
+  "artifacts": {
+    "component_wasm": "component.wasm"
+  },
+  "capabilities": {
+    "http": {
+      "allow_insecure": true,
+      "domains": [
+        "dev.greentic.local"
+      ]
+    }
+  },
+  "describe_export": "describe",
+  "hashes": {
+    "component_wasm": "blake3:784a524f32100cf2220f9f6b3c02280b8925a3415b2ddf60917a3d83fb04930c"
+  },
+  "id": "dev.greentic.echo",
+  "limits": {
+    "files": 4,
+    "fuel": 100,
+    "memory_mb": 32,
+    "wall_time_ms": 500
+  },
+  "name": "Dev Echo",
+  "provenance": {
+    "builder": "fixture-gen",
+    "built_at_utc": "2024-01-01T00:00:00Z",
+    "git_commit": "0000000",
+    "toolchain": "rustc"
+  },
+  "version": "0.1.0",
+  "world": "root:root/root"
+}
