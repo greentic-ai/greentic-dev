@@ -53,6 +53,9 @@ jobs:
             cargo build --workspace --locked --features ${{ matrix.features }}
           fi
 
+      - name: Install greentic-component tool
+        run: cargo install greentic-component --force --version 0.4
+
       - name: Tests (features=${{ matrix.features || 'default' }})
         run: |
           if [ -z "${{ matrix.features }}" ]; then

@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod component_cli;
 pub mod dev_runner;
 

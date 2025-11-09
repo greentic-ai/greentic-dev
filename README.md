@@ -47,6 +47,21 @@ cargo install --path .
 
 Once installed, `greentic-dev` becomes a single entry point for flow validation (`greentic-dev flow …`), deterministic pack builds (`greentic-dev pack …`), local pack runs, and component/MCP diagnostics.
 
+> **Requirements**
+>
+> The component subcommands delegate to the `greentic-component` CLI. Install `greentic-component >= 0.4.0` (for example `cargo install greentic-component --force --version 0.4`) so `greentic-dev component new/templates/doctor` can run. You can also point to a custom binary and set defaults via `~/.greentic/config.toml`:
+>
+> ```toml
+> [tools.greentic-component]
+> path = "/opt/bin/greentic-component"
+>
+> [defaults.component]
+> org = "ai.greentic"
+> template = "rust-wasi-p2-min"
+> ```
+>
+> Environment variables such as `GREENTIC_TEMPLATE_ROOT` and `GREENTIC_TEMPLATE_YEAR` are forwarded automatically, and you can opt into telemetry reporting by adding `--telemetry` to the component subcommands.
+
 ---
 
 ## Quick start: validate → build → run
@@ -141,10 +156,16 @@ so you immediately know which fields rely on defaults versus user input.
 | Scaffold a component            | `greentic-dev component new <name>`                                     |
 | Validate a component            | `greentic-dev component validate --path <dir>`                          |
 | Pack a component                | `greentic-dev component pack --path <dir>`                              |
+| List component templates        | `greentic-dev component templates --json`                               |
+| Scaffold with org defaults      | `greentic-dev component new --name echo --org ai.greentic`              |
+| Doctor a component workspace    | `greentic-dev component doctor --path ./echo`                           |
+| Set default org/template        | `greentic-dev config set defaults.component.org ai.greentic`            |
 | Inspect MCP tool map (feature)  | `greentic-dev mcp doctor <toolmap>`                                     |
 | Run full test suite             | `cargo test` \| `cargo test --features conformance`                     |
 | Lint everything                 | `cargo clippy --all-targets --all-features -- -D warnings`              |
 | Format                          | `cargo fmt`                                                             |
+
+Need to exercise only the component integration tests? Use `make itests`—it automatically skips when `greentic-component` is not on your `PATH`.
 
 ---
 
@@ -155,7 +176,8 @@ Below is the workflow we follow when creating a new component that we can valida
 ### 1. Scaffold with `greentic-dev component`
 
 ```bash
-greentic-dev component new my-component
+greentic-dev component templates --json | jq '.[0]'
+greentic-dev component new my-component --org ai.greentic
 cd component-my-component
 ```
 
@@ -198,6 +220,7 @@ greentic-dev component validate --path .
 ### 5. Package for distribution (optional)
 
 ```bash
+greentic-dev component doctor --path .
 greentic-dev component pack --path .
 ```
 

@@ -1,12 +1,11 @@
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow, bail};
 use greentic_component::describe::{DescribePayload, DescribeVersion};
 use greentic_component::lifecycle::Lifecycle;
-use greentic_component::manifest::{self, ComponentManifest};
+use greentic_component::manifest::ComponentManifest;
 use greentic_component::prepare::PreparedComponent;
 use greentic_component::prepare_component;
 use greentic_flow::flow_bundle::NodeRef;
@@ -316,18 +315,5 @@ pub fn inspect(target: &str, compact_json: bool) -> Result<()> {
     } else {
         println!("{}", serde_json::to_string_pretty(&view)?);
     }
-    Ok(())
-}
-
-pub fn doctor(target: &str) -> Result<()> {
-    let prepared = prepare_component(target)
-        .with_context(|| format!("failed to prepare component `{target}`"))?;
-    let manifest_raw =
-        fs::read_to_string(&prepared.manifest_path).context("failed to read manifest file")?;
-    manifest::validate_manifest(&manifest_raw).context("component manifest validation failed")?;
-    println!(
-        "✓ {}@{} passed describe/hash/world checks",
-        prepared.manifest.id, prepared.manifest.version
-    );
     Ok(())
 }
