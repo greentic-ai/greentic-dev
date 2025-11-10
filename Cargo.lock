@@ -1606,7 +1606,7 @@ dependencies = [
  "greentic-pack",
  "greentic-runner",
  "greentic-types 0.1.6",
- "greentic-types 0.3.0",
+ "greentic-types 0.3.1",
  "jsonschema",
  "once_cell",
  "semver",
@@ -1633,7 +1633,7 @@ dependencies = [
  "blake3",
  "clap",
  "greentic-interfaces",
- "greentic-types 0.3.0",
+ "greentic-types 0.3.1",
  "indexmap 2.11.4",
  "jsonschema",
  "lazy_static",
@@ -1653,7 +1653,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "638378c4256f585ae53c8d07fc8e9e0f663aa9a82d39a82990992d3acb7e7ba8"
 dependencies = [
  "anyhow",
- "greentic-types 0.3.0",
+ "greentic-types 0.3.1",
  "semver",
  "thiserror 2.0.17",
  "time",
@@ -1671,7 +1671,7 @@ checksum = "8f9b918ac1cb53a0c9df1b2138d15923ed91ba16e91d3e2fdce5ca666732ce23"
 dependencies = [
  "anyhow",
  "greentic-interfaces",
- "greentic-types 0.3.0",
+ "greentic-types 0.3.1",
  "indexmap 2.11.4",
  "rand 0.9.2",
  "serde",
@@ -1718,7 +1718,7 @@ dependencies = [
  "clap",
  "greentic-runner-desktop",
  "greentic-runner-host",
- "greentic-types 0.3.0",
+ "greentic-types 0.3.1",
  "serde_json",
  "tokio",
  "tracing",
@@ -1757,8 +1757,8 @@ dependencies = [
  "greentic-flow",
  "greentic-interfaces",
  "greentic-pack",
- "greentic-telemetry 0.3.0",
- "greentic-types 0.3.0",
+ "greentic-telemetry",
+ "greentic-types 0.3.1",
  "handlebars",
  "hex",
  "indexmap 2.11.4",
@@ -1778,23 +1778,6 @@ dependencies = [
  "wasmparser 0.240.0",
  "wasmtime",
  "zip 6.0.0",
-]
-
-[[package]]
-name = "greentic-telemetry"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcdebdf722c62350b0be91a24d320b782118ea301cdf7981814cf2942b57dc3a"
-dependencies = [
- "once_cell",
- "opentelemetry",
- "opentelemetry-otlp",
- "opentelemetry_sdk",
- "thiserror 2.0.17",
- "tokio",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -1829,11 +1812,11 @@ dependencies = [
 
 [[package]]
 name = "greentic-types"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6362e86ec9aa970380ae6815a2704cbcf208b6cc8f5405bdca4b0fb8446a805"
+checksum = "f4e8fba9e6c5ac8d64ef3dc37b1a9378694c55c470f44f3abf3b1c6996015341"
 dependencies = [
- "greentic-telemetry 0.2.3",
+ "greentic-telemetry",
  "greentic-types-macros",
  "opentelemetry-otlp",
  "semver",
@@ -2521,7 +2504,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "greentic-interfaces",
- "greentic-types 0.3.0",
+ "greentic-types 0.3.1",
  "hex",
  "reqwest",
  "serde",
