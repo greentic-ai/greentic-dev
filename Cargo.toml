@@ -1,6 +1,6 @@
 [package]
 name = "greentic-dev"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 description = "Developer CLI and local tooling for Greentic flows, packs, and components"
 license = "MIT OR Apache-2.0"
@@ -38,7 +38,7 @@ convert_case = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.9"
-toml_edit = "0.22"
+toml_edit = "0.23"
 semver = "1.0"
 sha2 = "0.10"
 time = { version = "0.3", features = ["macros", "formatting"] }

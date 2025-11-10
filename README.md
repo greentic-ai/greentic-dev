@@ -49,7 +49,7 @@ Once installed, `greentic-dev` becomes a single entry point for flow validation 
 
 > **Requirements**
 >
-> The component subcommands delegate to the `greentic-component` CLI. Install `greentic-component >= 0.4.0` (for example `cargo install greentic-component --force --version 0.4`) so `greentic-dev component new/templates/doctor` can run. You can also point to a custom binary and set defaults via `~/.greentic/config.toml`:
+> The component subcommands delegate to the `greentic-component` CLI. Install `greentic-component >= 0.3.2` (for example `cargo install greentic-component --force --version 0.3`) so `greentic-dev component new/templates/doctor` can run. You can also point to a custom binary and set defaults via `~/.greentic/config.toml`:
 >
 > ```toml
 > [tools.greentic-component]

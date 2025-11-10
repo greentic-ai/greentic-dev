@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/component_cli.rs`."><title>component_cli.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="greentic_dev" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (595b9a498 2025-10-03)" data-channel="nightly" data-search-js="search-de4c8920.js" data-stringdex-js="stringdex-828709d0.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">greentic_dev/</div>component_cli.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>std::collections::{BTreeSet, HashMap};
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/component_cli.rs`."><title>component_cli.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="greentic_dev" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (b15a874aa 2025-11-02)" data-channel="nightly" data-search-js="search-5c29b3b5.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">greentic_dev/</div>component_cli.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>std::collections::{BTreeSet, HashMap};
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>std::env;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>std::fs;
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>std::io::Write;
@@ -410,7 +410,7 @@
 <a href=#410 id=410 data-nosnippet>410</a>        .iter()
 <a href=#411 id=411 data-nosnippet>411</a>        .map(|export| export.operation.clone())
 <a href=#412 id=412 data-nosnippet>412</a>        .collect();
-<a href=#413 id=413 data-nosnippet>413</a>    <span class="kw">if </span>!available_ops.contains(<span class="kw-2">&amp;</span>operation) {
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="macro">if !</span>available_ops.contains(<span class="kw-2">&amp;</span>operation) {
 <a href=#414 id=414 data-nosnippet>414</a>        <span class="macro">bail!</span>(
 <a href=#415 id=415 data-nosnippet>415</a>            <span class="string">"component does not export required operation `{}`. Available: {}"</span>,
 <a href=#416 id=416 data-nosnippet>416</a>            operation,
@@ -443,7 +443,7 @@
 <a href=#443 id=443 data-nosnippet>443</a>            missing_secrets.push(secret.clone());
 <a href=#444 id=444 data-nosnippet>444</a>        }
 <a href=#445 id=445 data-nosnippet>445</a>    }
-<a href=#446 id=446 data-nosnippet>446</a>    <span class="kw">if </span>!missing_secrets.is_empty() {
+<a href=#446 id=446 data-nosnippet>446</a>    <span class="macro">if !</span>missing_secrets.is_empty() {
 <a href=#447 id=447 data-nosnippet>447</a>        <span class="macro">println!</span>(
 <a href=#448 id=448 data-nosnippet>448</a>            <span class="string">"warning: secrets not provided via environment variables: {}"</span>,
 <a href=#449 id=449 data-nosnippet>449</a>            missing_secrets.join(<span class="string">", "</span>)
@@ -554,7 +554,7 @@
 <a href=#554 id=554 data-nosnippet>554</a>    })<span class="question-mark">? </span>{
 <a href=#555 id=555 data-nosnippet>555</a>        <span class="kw">let </span>entry = entry<span class="question-mark">?</span>;
 <a href=#556 id=556 data-nosnippet>556</a>        <span class="kw">let </span>path = entry.path();
-<a href=#557 id=557 data-nosnippet>557</a>        <span class="kw">if </span>!path.is_dir() {
+<a href=#557 id=557 data-nosnippet>557</a>        <span class="macro">if !</span>path.is_dir() {
 <a href=#558 id=558 data-nosnippet>558</a>            <span class="kw">continue</span>;
 <a href=#559 id=559 data-nosnippet>559</a>        }
 <a href=#560 id=560 data-nosnippet>560</a>        <span class="kw">let </span>name = entry
@@ -639,7 +639,7 @@
 <a href=#639 id=639 data-nosnippet>639</a><span class="kw">fn </span>find_crate_source(crate_name: <span class="kw-2">&amp;</span>str, version: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;PathBuf&gt; {
 <a href=#640 id=640 data-nosnippet>640</a>    <span class="kw">let </span>home = cargo_home()<span class="question-mark">?</span>;
 <a href=#641 id=641 data-nosnippet>641</a>    <span class="kw">let </span>registry_src = home.join(<span class="string">"registry/src"</span>);
-<a href=#642 id=642 data-nosnippet>642</a>    <span class="kw">if </span>!registry_src.exists() {
+<a href=#642 id=642 data-nosnippet>642</a>    <span class="macro">if !</span>registry_src.exists() {
 <a href=#643 id=643 data-nosnippet>643</a>        <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
 <a href=#644 id=644 data-nosnippet>644</a>            <span class="string">"cargo registry src directory not found at {}"</span>,
 <a href=#645 id=645 data-nosnippet>645</a>            registry_src.display()
@@ -648,7 +648,7 @@
 <a href=#648 id=648 data-nosnippet>648</a>
 <a href=#649 id=649 data-nosnippet>649</a>    <span class="kw">for </span>index <span class="kw">in </span>fs::read_dir(<span class="kw-2">&amp;</span>registry_src)<span class="question-mark">? </span>{
 <a href=#650 id=650 data-nosnippet>650</a>        <span class="kw">let </span>index_path = index<span class="question-mark">?</span>.path();
-<a href=#651 id=651 data-nosnippet>651</a>        <span class="kw">if </span>!index_path.is_dir() {
+<a href=#651 id=651 data-nosnippet>651</a>        <span class="macro">if !</span>index_path.is_dir() {
 <a href=#652 id=652 data-nosnippet>652</a>            <span class="kw">continue</span>;
 <a href=#653 id=653 data-nosnippet>653</a>        }
 <a href=#654 id=654 data-nosnippet>654</a>        <span class="kw">let </span>candidate = index_path.join(<span class="macro">format!</span>(<span class="string">"{}-{}"</span>, crate_name, version));
@@ -828,10 +828,10 @@
 <a href=#828 id=828 data-nosnippet>828</a>        <span class="macro">bail!</span>(<span class="string">"no WIT packages embedded in component artifact"</span>);
 <a href=#829 id=829 data-nosnippet>829</a>    }
 <a href=#830 id=830 data-nosnippet>830</a>
-<a href=#831 id=831 data-nosnippet>831</a>    <span class="kw">if </span>provider.abi.world != world {
+<a href=#831 id=831 data-nosnippet>831</a>    <span class="kw">if </span>provider.abi.<span class="macro">world !</span>= world {
 <a href=#832 id=832 data-nosnippet>832</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(expected_pkg) = world_to_package_id(<span class="kw-2">&amp;</span>provider.abi.world) {
 <a href=#833 id=833 data-nosnippet>833</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(actual_pkg) = export_package {
-<a href=#834 id=834 data-nosnippet>834</a>                <span class="kw">if </span>actual_pkg != expected_pkg {
+<a href=#834 id=834 data-nosnippet>834</a>                <span class="kw">if </span><span class="macro">actual_pkg !</span>= expected_pkg {
 <a href=#835 id=835 data-nosnippet>835</a>                    <span class="macro">bail!</span>(
 <a href=#836 id=836 data-nosnippet>836</a>                        <span class="string">"provider world `{}` expects package '{}', but embedded exports use '{}'"</span>,
 <a href=#837 id=837 data-nosnippet>837</a>                        provider.abi.world,
@@ -839,7 +839,7 @@
 <a href=#839 id=839 data-nosnippet>839</a>                        actual_pkg
 <a href=#840 id=840 data-nosnippet>840</a>                    );
 <a href=#841 id=841 data-nosnippet>841</a>                }
-<a href=#842 id=842 data-nosnippet>842</a>            } <span class="kw">else if </span>!packages.iter().any(|pkg| pkg == <span class="kw-2">&amp;</span>expected_pkg) {
+<a href=#842 id=842 data-nosnippet>842</a>            } <span class="kw">else </span><span class="macro">if !</span>packages.iter().any(|pkg| pkg == <span class="kw-2">&amp;</span>expected_pkg) {
 <a href=#843 id=843 data-nosnippet>843</a>                <span class="macro">bail!</span>(
 <a href=#844 id=844 data-nosnippet>844</a>                    <span class="string">"provider world `{}` expects package '{}', which was not embedded (found {:?})"</span>,
 <a href=#845 id=845 data-nosnippet>845</a>                    provider.abi.world,
@@ -856,13 +856,13 @@
 <a href=#856 id=856 data-nosnippet>856</a>    }
 <a href=#857 id=857 data-nosnippet>857</a>
 <a href=#858 id=858 data-nosnippet>858</a>    <span class="kw">let </span>expected_packages: BTreeSet&lt;<span class="kw">_</span>&gt; = provider.abi.wit_packages.iter().cloned().collect();
-<a href=#859 id=859 data-nosnippet>859</a>    <span class="kw">if </span>!expected_packages.is_empty() {
+<a href=#859 id=859 data-nosnippet>859</a>    <span class="macro">if !</span>expected_packages.is_empty() {
 <a href=#860 id=860 data-nosnippet>860</a>        <span class="kw">let </span>actual_greentic: BTreeSet&lt;<span class="kw">_</span>&gt; = packages
 <a href=#861 id=861 data-nosnippet>861</a>            .iter()
 <a href=#862 id=862 data-nosnippet>862</a>            .filter(|pkg| pkg.starts_with(<span class="string">"greentic:"</span>))
 <a href=#863 id=863 data-nosnippet>863</a>            .cloned()
 <a href=#864 id=864 data-nosnippet>864</a>            .collect();
-<a href=#865 id=865 data-nosnippet>865</a>        <span class="kw">if </span>!expected_packages.is_subset(<span class="kw-2">&amp;</span>actual_greentic) {
+<a href=#865 id=865 data-nosnippet>865</a>        <span class="macro">if !</span>expected_packages.is_subset(<span class="kw-2">&amp;</span>actual_greentic) {
 <a href=#866 id=866 data-nosnippet>866</a>            <span class="macro">bail!</span>(
 <a href=#867 id=867 data-nosnippet>867</a>                <span class="string">"provider wit_packages {:?} not satisfied by embedded packages {:?}"</span>,
 <a href=#868 id=868 data-nosnippet>868</a>                expected_packages,
@@ -955,7 +955,7 @@
 <a href=#955 id=955 data-nosnippet>955</a>    ] {
 <a href=#956 id=956 data-nosnippet>956</a>        <span class="kw">if </span>original.contains(from) {
 <a href=#957 id=957 data-nosnippet>957</a>            <span class="kw">let </span>candidate = original.replace(from, to);
-<a href=#958 id=958 data-nosnippet>958</a>            <span class="kw">if </span>candidate != original &amp;&amp; !paths.contains(<span class="kw-2">&amp;</span>candidate) {
+<a href=#958 id=958 data-nosnippet>958</a>            <span class="kw">if </span><span class="macro">candidate !</span>= original &amp;&amp; !paths.contains(<span class="kw-2">&amp;</span>candidate) {
 <a href=#959 id=959 data-nosnippet>959</a>                paths.push(candidate);
 <a href=#960 id=960 data-nosnippet>960</a>            }
 <a href=#961 id=961 data-nosnippet>961</a>        }
@@ -1010,7 +1010,7 @@
 <a href=#1010 id=1010 data-nosnippet>1010</a>        .with_context(|| <span class="macro">format!</span>(<span class="string">"failed to read provider metadata {}"</span>, path.display()))<span class="question-mark">?</span>;
 <a href=#1011 id=1011 data-nosnippet>1011</a>    <span class="kw">let </span>provider: ProviderMetadata =
 <a href=#1012 id=1012 data-nosnippet>1012</a>        toml::from_str(<span class="kw-2">&amp;</span>contents).context(<span class="string">"provider.toml is not valid TOML"</span>)<span class="question-mark">?</span>;
-<a href=#1013 id=1013 data-nosnippet>1013</a>    <span class="kw">if </span>provider.artifact.format != <span class="string">"wasm-component" </span>{
+<a href=#1013 id=1013 data-nosnippet>1013</a>    <span class="kw">if </span>provider.artifact.<span class="macro">format !</span>= <span class="string">"wasm-component" </span>{
 <a href=#1014 id=1014 data-nosnippet>1014</a>        <span class="macro">bail!</span>(
 <a href=#1015 id=1015 data-nosnippet>1015</a>            <span class="string">"artifact.format must be `wasm-component`, found `{}`"</span>,
 <a href=#1016 id=1016 data-nosnippet>1016</a>            provider.artifact.format
@@ -1020,21 +1020,21 @@
 <a href=#1020 id=1020 data-nosnippet>1020</a>}
 <a href=#1021 id=1021 data-nosnippet>1021</a>
 <a href=#1022 id=1022 data-nosnippet>1022</a><span class="kw">fn </span>ensure_version_alignment(provider: <span class="kw-2">&amp;</span>ProviderMetadata, versions: <span class="kw-2">&amp;</span>Versions) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#1023 id=1023 data-nosnippet>1023</a>    <span class="kw">if </span>provider.abi.interfaces_version != versions.interfaces {
+<a href=#1023 id=1023 data-nosnippet>1023</a>    <span class="kw">if </span>provider.abi.<span class="macro">interfaces_version !</span>= versions.interfaces {
 <a href=#1024 id=1024 data-nosnippet>1024</a>        <span class="macro">bail!</span>(
 <a href=#1025 id=1025 data-nosnippet>1025</a>            <span class="string">"provider abi.interfaces_version `{}` does not match pinned `{}`"</span>,
 <a href=#1026 id=1026 data-nosnippet>1026</a>            provider.abi.interfaces_version,
 <a href=#1027 id=1027 data-nosnippet>1027</a>            versions.interfaces
 <a href=#1028 id=1028 data-nosnippet>1028</a>        );
 <a href=#1029 id=1029 data-nosnippet>1029</a>    }
-<a href=#1030 id=1030 data-nosnippet>1030</a>    <span class="kw">if </span>provider.abi.types_version != versions.types {
+<a href=#1030 id=1030 data-nosnippet>1030</a>    <span class="kw">if </span>provider.abi.<span class="macro">types_version !</span>= versions.types {
 <a href=#1031 id=1031 data-nosnippet>1031</a>        <span class="macro">bail!</span>(
 <a href=#1032 id=1032 data-nosnippet>1032</a>            <span class="string">"provider abi.types_version `{}` does not match pinned `{}`"</span>,
 <a href=#1033 id=1033 data-nosnippet>1033</a>            provider.abi.types_version,
 <a href=#1034 id=1034 data-nosnippet>1034</a>            versions.types
 <a href=#1035 id=1035 data-nosnippet>1035</a>        );
 <a href=#1036 id=1036 data-nosnippet>1036</a>    }
-<a href=#1037 id=1037 data-nosnippet>1037</a>    <span class="kw">if </span>provider.abi.component_runtime != versions.component_runtime {
+<a href=#1037 id=1037 data-nosnippet>1037</a>    <span class="kw">if </span>provider.abi.<span class="macro">component_runtime !</span>= versions.component_runtime {
 <a href=#1038 id=1038 data-nosnippet>1038</a>        <span class="macro">bail!</span>(
 <a href=#1039 id=1039 data-nosnippet>1039</a>            <span class="string">"provider abi.component_runtime `{}` does not match pinned `{}`"</span>,
 <a href=#1040 id=1040 data-nosnippet>1040</a>            provider.abi.component_runtime,
@@ -1070,7 +1070,7 @@
 <a href=#1070 id=1070 data-nosnippet>1070</a>            <span class="kw">let </span>iface = <span class="kw-2">&amp;</span>resolve.interfaces[<span class="kw-2">*</span>id];
 <a href=#1071 id=1071 data-nosnippet>1071</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(pkg_id) = iface.package {
 <a href=#1072 id=1072 data-nosnippet>1072</a>                <span class="kw">let </span>pkg = <span class="kw-2">&amp;</span>resolve.packages[pkg_id].name;
-<a href=#1073 id=1073 data-nosnippet>1073</a>                <span class="kw">if </span>pkg.namespace != <span class="string">"root" </span>{
+<a href=#1073 id=1073 data-nosnippet>1073</a>                <span class="kw">if </span>pkg.<span class="macro">namespace !</span>= <span class="string">"root" </span>{
 <a href=#1074 id=1074 data-nosnippet>1074</a>                    <span class="kw">let </span><span class="kw-2">mut </span>ident = <span class="macro">format!</span>(<span class="string">"{}:{}"</span>, pkg.namespace, pkg.name);
 <a href=#1075 id=1075 data-nosnippet>1075</a>                    <span class="kw">if let </span><span class="prelude-val">Some</span>(version) = <span class="kw-2">&amp;</span>pkg.version {
 <a href=#1076 id=1076 data-nosnippet>1076</a>                        ident.push(<span class="string">'@'</span>);
@@ -1112,7 +1112,7 @@
 <a href=#1112 id=1112 data-nosnippet>1112</a>        .map(|export| export.operation.clone())
 <a href=#1113 id=1113 data-nosnippet>1113</a>        .collect();
 <a href=#1114 id=1114 data-nosnippet>1114</a>    <span class="kw">for </span>required <span class="kw">in </span><span class="kw-2">&amp;</span>provider.exports.provides {
-<a href=#1115 id=1115 data-nosnippet>1115</a>        <span class="kw">if </span>!actual.contains(required) {
+<a href=#1115 id=1115 data-nosnippet>1115</a>        <span class="macro">if !</span>actual.contains(required) {
 <a href=#1116 id=1116 data-nosnippet>1116</a>            <span class="macro">bail!</span>(
 <a href=#1117 id=1117 data-nosnippet>1117</a>                <span class="string">"component manifest is missing required export `{}`"</span>,
 <a href=#1118 id=1118 data-nosnippet>1118</a>                required
@@ -1145,4 +1145,5 @@
 <a href=#1145 id=1145 data-nosnippet>1145</a>        }
 <a href=#1146 id=1146 data-nosnippet>1146</a>    }
 <a href=#1147 id=1147 data-nosnippet>1147</a>    <span class="prelude-val">Ok</span>(())
-<a href=#1148 id=1148 data-nosnippet>1148</a>}</code></pre></div></section></main></body></html>
+<a href=#1148 id=1148 data-nosnippet>1148</a>}
+</code></pre></div></section></main></body></html>
