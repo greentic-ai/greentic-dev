@@ -13,8 +13,8 @@ use component_runtime::{
 };
 use component_store::ComponentStore;
 use convert_case::{Case, Casing};
+use greentic_types::TenantCtx as RuntimeTenantCtx;
 use greentic_types::{EnvId, TenantCtx as FlowTenantCtx, TenantId};
-use greentic_types_compat::TenantCtx as RuntimeTenantCtx;
 use once_cell::sync::Lazy;
 use semver::Version;
 use serde::{Deserialize, Serialize};
