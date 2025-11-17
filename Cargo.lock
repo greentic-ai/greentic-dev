@@ -1645,7 +1645,7 @@ dependencies = [
  "toml_edit",
  "which",
  "wit-component",
- "wit-parser 0.240.0",
+ "wit-parser 0.241.2",
 ]
 
 [[package]]
@@ -4877,6 +4877,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmparser"
+version = "0.241.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46d90019b1afd4b808c263e428de644f3003691f243387d30d673211ee0cb8e8"
+dependencies = [
+ "bitflags",
+ "indexmap 2.11.4",
+ "semver",
+]
+
+[[package]]
 name = "wasmprinter"
 version = "0.239.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5595,6 +5606,24 @@ dependencies = [
  "serde_json",
  "unicode-xid",
  "wasmparser 0.240.0",
+]
+
+[[package]]
+name = "wit-parser"
+version = "0.241.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09ef1c6ad67f35c831abd4039c02894de97034100899614d1c44e2268ad01c91"
+dependencies = [
+ "anyhow",
+ "id-arena",
+ "indexmap 2.11.4",
+ "log",
+ "semver",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "unicode-xid",
+ "wasmparser 0.241.2",
 ]
 
 [[package]]
