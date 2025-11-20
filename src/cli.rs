@@ -119,6 +119,7 @@ pub struct PackVerifyArgs {
 }
 
 #[derive(Args, Debug, Clone, Default)]
+#[command(disable_help_flag = true)]
 pub struct PackNewArgs {
     /// Arguments passed directly to the `packc new` command
     #[arg(
