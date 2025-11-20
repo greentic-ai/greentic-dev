@@ -43,7 +43,7 @@ Older assets (`src/describe.rs`, `tests/schema_validates_examples.rs`, `examples
    Compiles to `target/wasm32-wasip2/release/<name>.wasm`. The scaffolder sets `CARGO_COMPONENT_CACHE_DIR` to a local folder so the command works offline once the cargo cache is warmed.
 
 2. **Validate:** `greentic-dev component validate --path .`  
-   Checks that the artifact exists, decodes WIT metadata, compares it against `provider.toml`, and (if WASI host shims are present) inspects the manifest via `component-runtime`. Missing WASI support produces a warning but doesn’t fail validation.
+   Checks that the artifact exists, decodes WIT metadata, compares it against `provider.toml`, and (if WASI host shims are present) inspects the manifest via the current host/runtime hooks. Missing WASI support produces a warning but doesn’t fail validation.
 
 3. **Pack (optional):** `greentic-dev component pack --path .`  
    Copies the `.wasm`, writes `meta.json` (provider metadata + sha + timestamp), and generates `SHA256SUMS` under `packs/<name>/<version>/`.

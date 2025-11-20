@@ -1,26 +1,16 @@
+use anyhow::{Context, Result, anyhow, bail};
+use clap::{Args, Subcommand};
+use convert_case::{Case, Casing};
+use once_cell::sync::Lazy;
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::Arc;
-
-use anyhow::{Context, Result, anyhow, bail};
-use clap::{Args, Subcommand};
-use convert_case::{Case, Casing};
-use greentic_component_runtime as component_runtime;
-use greentic_component_runtime::{
-    Bindings, ComponentManifestInfo, ComponentRef, HostPolicy, LoadPolicy,
-};
-use greentic_component_store::ComponentStore;
-use greentic_types::TenantCtx as RuntimeTenantCtx;
-use greentic_types::{EnvId, TenantCtx as FlowTenantCtx, TenantId};
-use once_cell::sync::Lazy;
-use semver::Version;
-use serde::{Deserialize, Serialize};
-use serde_json::{Value as JsonValue, json};
-use sha2::{Digest, Sha256};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 use wit_component::{DecodedWasm, decode as decode_component};
@@ -133,7 +123,6 @@ struct ValidationReport {
     sha256: String,
     world: String,
     packages: Vec<String>,
-    manifest: Option<ComponentManifestInfo>,
 }
 
 #[derive(Debug, Clone)]
@@ -156,7 +145,7 @@ impl Versions {
     fn load() -> Result<Self> {
         let interfaces_version = resolved_version("greentic-interfaces")?;
         let types_version = resolved_version("greentic-types")?;
-        let component_runtime_version = resolved_version("component-runtime")?;
+        let component_runtime_version = resolved_version("greentic-component")?;
 
         let interfaces_root = find_crate_source("greentic-interfaces", &interfaces_version)?;
         let component_wit = detect_wit_package(&interfaces_root, "component")?;
@@ -182,7 +171,6 @@ pub fn run_component_command(command: ComponentCommands) -> Result<()> {
         ComponentCommands::New(args) => new_component(args),
         ComponentCommands::Validate(args) => validate_command(args),
         ComponentCommands::Pack(args) => pack_command(args),
-        ComponentCommands::DemoRun(args) => demo_run_command(args),
     }
 }
 
@@ -194,8 +182,6 @@ pub enum ComponentCommands {
     Validate(ValidateArgs),
     /// Package a component into `packs/<name>/<version>`
     Pack(PackArgs),
-    /// Execute a component locally with default mocks
-    DemoRun(DemoRunArgs),
 }
 
 #[derive(Args, Debug, Clone)]
@@ -226,28 +212,6 @@ pub struct PackArgs {
     #[arg(long, value_name = "DIR")]
     out_dir: Option<PathBuf>,
     /// Skip cargo component build before packing
-    #[arg(long)]
-    skip_build: bool,
-}
-
-#[derive(Args, Debug, Clone)]
-pub struct DemoRunArgs {
-    /// Path to the component directory
-    #[arg(long, value_name = "PATH", default_value = ".")]
-    path: PathBuf,
-    /// Optional path to the component artifact to execute
-    #[arg(long, value_name = "FILE")]
-    artifact: Option<PathBuf>,
-    /// Operation to invoke (defaults to "invoke")
-    #[arg(long, value_name = "NAME")]
-    operation: Option<String>,
-    /// JSON string payload for the invoke call
-    #[arg(long, value_name = "JSON")]
-    input: Option<String>,
-    /// Path to a JSON file with configuration used for binding
-    #[arg(long, value_name = "FILE")]
-    config: Option<PathBuf>,
-    /// Skip rebuilding the component before running
     #[arg(long)]
     skip_build: bool,
 }
@@ -374,118 +338,6 @@ pub fn pack_command(args: PackArgs) -> Result<()> {
 
     println!("✓ Packed component at {}", dest_dir.display());
     Ok(())
-}
-
-pub fn demo_run_command(args: DemoRunArgs) -> Result<()> {
-    let report = validate_component(&args.path, !args.skip_build)?;
-    let artifact_path = match args.artifact {
-        Some(ref path) => resolve_path(&report.component_dir, path),
-        None => report.artifact_path.clone(),
-    };
-
-    let cache_root = report.component_dir.join("target/demo-cache");
-    let store = ComponentStore::new(&cache_root)
-        .with_context(|| format!("failed to initialise cache at {}", cache_root.display()))?;
-    let policy = LoadPolicy::new(Arc::new(store)).with_host_policy(HostPolicy {
-        allow_http_fetch: false,
-        allow_telemetry: true,
-    });
-    let cref = ComponentRef {
-        name: report.provider.name.clone(),
-        locator: artifact_path
-            .canonicalize()
-            .unwrap_or(artifact_path.clone())
-            .display()
-            .to_string(),
-    };
-    let handle =
-        component_runtime::load(&cref, &policy).context("failed to load component into runtime")?;
-    let manifest = component_runtime::describe(&handle).context("failed to describe component")?;
-
-    let operation = args
-        .operation
-        .clone()
-        .unwrap_or_else(|| "invoke".to_string());
-    let available_ops: BTreeSet<_> = manifest
-        .exports
-        .iter()
-        .map(|export| export.operation.clone())
-        .collect();
-    if !available_ops.contains(&operation) {
-        bail!(
-            "component does not export required operation `{}`. Available: {}",
-            operation,
-            available_ops.iter().cloned().collect::<Vec<_>>().join(", ")
-        );
-    }
-
-    let input_value: JsonValue = if let Some(ref input) = args.input {
-        serde_json::from_str(input).context("failed to parse --input JSON")?
-    } else {
-        json!({})
-    };
-
-    let config_value: JsonValue = if let Some(ref cfg) = args.config {
-        let cfg_path = resolve_path(&report.component_dir, cfg);
-        let contents = fs::read_to_string(&cfg_path)
-            .with_context(|| format!("failed to read config {}", cfg_path.display()))?;
-        serde_json::from_str(&contents)
-            .with_context(|| format!("invalid JSON in {}", cfg_path.display()))?
-    } else {
-        json!({})
-    };
-
-    let mut missing_secrets = Vec::new();
-    let mut provided_secrets = Vec::new();
-    for secret in &manifest.secrets {
-        if env::var(secret).is_ok() {
-            provided_secrets.push(secret.clone());
-        } else {
-            missing_secrets.push(secret.clone());
-        }
-    }
-    if !missing_secrets.is_empty() {
-        println!(
-            "warning: secrets not provided via environment variables: {}",
-            missing_secrets.join(", ")
-        );
-    }
-
-    let bindings = Bindings::new(config_value.clone(), provided_secrets);
-    let env = EnvId::new("dev").context("invalid default environment id")?;
-    let tenant_id = TenantId::new("demo").context("invalid default tenant id")?;
-    let tenant = FlowTenantCtx::new(env, tenant_id);
-    let runtime_tenant = flow_ctx_to_runtime_ctx(&tenant)?;
-
-    let mut secret_resolver =
-        |key: &str, _ctx: &RuntimeTenantCtx| -> Result<String, component_runtime::CompError> {
-            match env::var(key) {
-                Ok(value) => Ok(value),
-                Err(_) => Err(component_runtime::CompError::Runtime(format!(
-                    "secret `{key}` not provided; set environment variable `{key}`"
-                ))),
-            }
-        };
-
-    component_runtime::bind(&handle, &runtime_tenant, &bindings, &mut secret_resolver)
-        .context("failed to bind component configuration")?;
-    let output = component_runtime::invoke(&handle, &operation, &input_value, &runtime_tenant)
-        .context("component invocation failed")?;
-
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&output)
-            .context("failed to format invocation result as JSON")?
-    );
-
-    Ok(())
-}
-
-fn flow_ctx_to_runtime_ctx(ctx: &FlowTenantCtx) -> Result<RuntimeTenantCtx> {
-    let serialized = serde_json::to_value(ctx)
-        .context("failed to serialize tenant context for runtime mapping")?;
-    serde_json::from_value(serialized)
-        .context("failed to convert tenant context to runtime-compatible version")
 }
 
 fn create_dir(path: PathBuf) -> Result<()> {
@@ -765,14 +617,6 @@ fn print_validation_summary(report: &ValidationReport) {
     for pkg in &report.packages {
         println!("    - {pkg}");
     }
-    if let Some(manifest) = &report.manifest {
-        println!("  exports:");
-        for export in &manifest.exports {
-            println!("    - {}", export.operation);
-        }
-    } else {
-        println!("  exports: <skipped - missing WASI host support>");
-    }
 }
 
 fn validate_component(path: &Path, build: bool) -> Result<ValidationReport> {
@@ -870,43 +714,6 @@ fn validate_component(path: &Path, build: bool) -> Result<ValidationReport> {
         }
     }
 
-    let cache_root = component_dir.join("target/component-cache");
-    let store = ComponentStore::new(&cache_root)
-        .with_context(|| format!("failed to initialise cache at {}", cache_root.display()))?;
-    let policy = LoadPolicy::new(Arc::new(store)).with_host_policy(HostPolicy {
-        allow_http_fetch: false,
-        allow_telemetry: true,
-    });
-    let cref = ComponentRef {
-        name: provider.name.clone(),
-        locator: artifact_path
-            .canonicalize()
-            .unwrap_or(artifact_path.clone())
-            .display()
-            .to_string(),
-    };
-    let manifest = match component_runtime::load(&cref, &policy) {
-        Ok(handle) => {
-            let manifest = component_runtime::describe(&handle)
-                .context("failed to inspect component manifest")?;
-            validate_exports(&provider, &manifest)?;
-            validate_capabilities(&provider, &manifest)?;
-            Some(manifest)
-        }
-        Err(component_runtime::CompError::Wasmtime(wasmtime_err)) => {
-            let msg = wasmtime_err.to_string();
-            if msg.contains("wasi:") {
-                println!(
-                    "warning: skipping runtime manifest validation due to missing WASI host support: {msg}"
-                );
-                None
-            } else {
-                return Err(component_runtime::CompError::Wasmtime(wasmtime_err).into());
-            }
-        }
-        Err(other) => return Err(other.into()),
-    };
-
     Ok(ValidationReport {
         provider,
         component_dir,
@@ -914,7 +721,6 @@ fn validate_component(path: &Path, build: bool) -> Result<ValidationReport> {
         sha256,
         world,
         packages,
-        manifest,
     })
 }
 
@@ -1032,13 +838,6 @@ fn ensure_version_alignment(provider: &ProviderMetadata, versions: &Versions) ->
             versions.types
         );
     }
-    if provider.abi.component_runtime != versions.component_runtime {
-        bail!(
-            "provider abi.component_runtime `{}` does not match pinned `{}`",
-            provider.abi.component_runtime,
-            versions.component_runtime
-        );
-    }
     Ok(())
 }
 
@@ -1101,42 +900,4 @@ fn world_to_package_id(world: &str) -> Option<String> {
     let (pkg_part, rest) = world.split_once('/')?;
     let (_, version) = rest.rsplit_once('@')?;
     Some(format!("{pkg_part}@{version}"))
-}
-
-fn validate_exports(provider: &ProviderMetadata, manifest: &ComponentManifestInfo) -> Result<()> {
-    let actual: BTreeSet<_> = manifest
-        .exports
-        .iter()
-        .map(|export| export.operation.clone())
-        .collect();
-    for required in &provider.exports.provides {
-        if !actual.contains(required) {
-            bail!("component manifest is missing required export `{required}`");
-        }
-    }
-    Ok(())
-}
-
-fn validate_capabilities(
-    provider: &ProviderMetadata,
-    manifest: &ComponentManifestInfo,
-) -> Result<()> {
-    let actual: BTreeSet<_> = manifest
-        .capabilities
-        .iter()
-        .map(|cap| cap.as_str().to_string())
-        .collect();
-    for (name, required) in [
-        ("secrets", provider.capabilities.secrets),
-        ("telemetry", provider.capabilities.telemetry),
-        ("network", provider.capabilities.network),
-        ("filesystem", provider.capabilities.filesystem),
-    ] {
-        if required && !actual.contains(name) {
-            bail!(
-                "provider declares capability `{name}` but component manifest does not expose it"
-            );
-        }
-    }
-    Ok(())
 }

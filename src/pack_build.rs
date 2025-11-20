@@ -9,6 +9,7 @@ use greentic_pack::builder::{
     ComponentArtifact, ComponentPin as PackComponentPin, FlowBundle as PackFlowBundle, ImportRef,
     NodeRef as PackNodeRef, PackBuilder, PackMeta, Provenance, Signing,
 };
+use greentic_types::PackKind;
 use semver::Version;
 use serde::Deserialize;
 use serde_json::{Value as JsonValue, json};
@@ -245,6 +246,7 @@ fn load_pack_meta(
     let description = config.description;
     let authors = config.authors.unwrap_or_default();
     let license = config.license;
+    let kind = config.kind;
     let imports = config
         .imports
         .unwrap_or_default()
@@ -272,6 +274,7 @@ fn load_pack_meta(
         authors,
         license,
         imports,
+        kind,
         entry_flows,
         created_at_utc,
         annotations,
@@ -327,6 +330,7 @@ struct PackMetaToml {
     pack_id: Option<String>,
     version: Option<String>,
     name: Option<String>,
+    kind: Option<PackKind>,
     description: Option<String>,
     authors: Option<Vec<String>>,
     license: Option<String>,

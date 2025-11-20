@@ -1,6 +1,6 @@
 [package]
 name = "greentic-dev"
-version = "0.3.6"
+version = "0.4.0"
 edition = "2024"
 description = "Developer CLI and local tooling for Greentic flows, packs, and components"
 license = "MIT OR Apache-2.0"
@@ -39,18 +39,16 @@ toml_edit = "0.23"
 semver = "1.0"
 sha2 = "0.10"
 time = { version = "0.3", features = ["macros", "formatting"] }
-greentic-component-store = { version = "0.3" }
-wit-component = "0.240"
-wit-parser = "0.240"
+wit-component = "0.241"
+wit-parser = "0.241"
 greentic-interfaces = { version = "0.4", default-features = false, features = ["describe-v1"] }
-greentic-types = { version = "0.3", features = ["serde"] }
-greentic-component-runtime = { version = "0.3" }
-greentic-flow = "0.3"
-greentic-pack = "0.3"
-greentic-runner = "0.3"
-greentic-component = { version = "0.3", features = ["prepare", "describe"] }
-greentic-mcp = { version = "0.3", optional = true }
-jsonschema = "0.33"
+greentic-types = { version = "0.4", features = ["serde"] }
+greentic-flow = "0.4"
+greentic-pack = "0.4"
+greentic-runner = "0.4"
+greentic-component = { version = "0.4", features = ["prepare", "describe"] }
+greentic-mcp = { version = "0.4", optional = true }
+jsonschema = "0.37"
 tempfile = "3"
 dirs = "6"
 which = "8"

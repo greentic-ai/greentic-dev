@@ -106,7 +106,7 @@ You should see output similar to:
   exports: <skipped - missing WASI host support>
 ```
 
-> The final line is expected today: the reference runtime (component-runtime 0.2.0) does not bundle WASI Preview 2 shims yet. Validation still succeeds; only the manifest inspection is skipped.
+> The final line is expected today: local WASI Preview 2 host shims may be missing. Validation still succeeds; only the manifest inspection is skipped.
 
 If validation fails, fix the reported issue (wrong version pins, missing artifact, etc.) and re-run the command.
 

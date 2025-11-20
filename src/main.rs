@@ -7,6 +7,7 @@ mod flow_cmd;
 mod mcp_cmd;
 mod pack_build;
 mod pack_run;
+mod pack_verify;
 mod util;
 
 use anyhow::Result;
@@ -15,10 +16,12 @@ use clap::Parser;
 use greentic_dev::cli::McpCommand;
 use greentic_dev::cli::{
     Cli, Command, FlowCommand, MockSettingArg, PackCommand, PackSignArg, RunPolicyArg,
+    VerifyPolicyArg,
 };
 
 use crate::pack_build::PackSigning;
 use crate::pack_run::{MockSetting, RunPolicy};
+use crate::pack_verify::VerifyPolicy;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -51,6 +54,9 @@ fn main() -> Result<()> {
                     mocks: args.mocks.into(),
                     artifacts_dir: args.artifacts.as_deref(),
                 })
+            }
+            PackCommand::Verify(args) => {
+                pack_verify::run(&args.pack, args.policy.into(), args.json)
             }
             PackCommand::New(args) => cmd::pack::run_new(&args),
         },
@@ -86,6 +92,15 @@ impl From<MockSettingArg> for MockSetting {
         match value {
             MockSettingArg::On => MockSetting::On,
             MockSettingArg::Off => MockSetting::Off,
+        }
+    }
+}
+
+impl From<VerifyPolicyArg> for VerifyPolicy {
+    fn from(value: VerifyPolicyArg) -> Self {
+        match value {
+            VerifyPolicyArg::Strict => VerifyPolicy::Strict,
+            VerifyPolicyArg::Devok => VerifyPolicy::DevOk,
         }
     }
 }

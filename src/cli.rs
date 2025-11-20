@@ -52,6 +52,8 @@ pub enum PackCommand {
     Build(PackBuildArgs),
     /// Execute a pack locally with mocks/telemetry support
     Run(PackRunArgs),
+    /// Verify a built pack archive (.gtpack)
+    Verify(PackVerifyArgs),
     /// Scaffold a pack workspace via the `packc` CLI
     New(PackNewArgs),
 }
@@ -101,6 +103,19 @@ pub struct PackRunArgs {
     /// Directory to persist run artifacts (transcripts, logs)
     #[arg(long = "artifacts")]
     pub artifacts: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+pub struct PackVerifyArgs {
+    /// Path to the pack (.gtpack) to verify
+    #[arg(short = 'p', long = "pack")]
+    pub pack: PathBuf,
+    /// Verification policy for signatures
+    #[arg(long = "policy", default_value = "devok", value_enum)]
+    pub policy: VerifyPolicyArg,
+    /// Emit the manifest JSON on success
+    #[arg(long = "json")]
+    pub json: bool,
 }
 
 #[derive(Args, Debug, Clone, Default)]
@@ -167,6 +182,12 @@ pub enum PackSignArg {
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
 pub enum RunPolicyArg {
+    Strict,
+    Devok,
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum VerifyPolicyArg {
     Strict,
     Devok,
 }

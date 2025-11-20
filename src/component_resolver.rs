@@ -124,7 +124,7 @@ impl ComponentResolver {
         let mut issues = Vec::new();
         if let Err(error) = validator.0.validate(&node.config) {
             for error in std::iter::once(error).chain(validator.0.iter_errors(&node.config)) {
-                let suffix = error.instance_path.to_string();
+                let suffix = error.instance_path().to_string();
                 let pointer = if suffix.is_empty() || suffix == "/" {
                     node.pointer.clone()
                 } else {

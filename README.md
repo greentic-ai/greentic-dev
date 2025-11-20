@@ -157,6 +157,7 @@ so you immediately know which fields rely on defaults versus user input.
 | Validate a flow                 | `greentic-dev flow validate -f <flow>.ygtc [--json]`                    |
 | Build a pack                    | `greentic-dev pack build -f <flow>.ygtc -o dist/out.gtpack`             |
 | Run a pack locally              | `greentic-dev pack run -p dist/out.gtpack [--mocks on] [--allow host]`  |
+| Verify a built pack             | `greentic-dev pack verify -p dist/out.gtpack [--policy strict|devok]`   |
 | Scaffold a pack workspace       | `greentic-dev pack new -- --name demo-pack` *(delegated to packc)*      |
 | View transcript                 | `cargo run -p dev-viewer -- --file .greentic/transcripts/<file>.yaml`   |
 | Scaffold a component            | `greentic-dev component new <name>`                                     |
@@ -222,7 +223,7 @@ cargo component build --release --target wasm32-wasip2
 greentic-dev component validate --path .
 ```
 
-**Why**: `cargo component` produces a Preview 2 component (`wasm32-wasip2`) using only the vendored WIT, which keeps builds reproducible. `greentic-dev component validate` confirms the artifact and metadata agree (WIT package IDs, world name, version pins) and, when WASI shims exist, inspects the manifest via the component runtime. If WASI support is missing locally, validation still passes but prints a warning that manifest inspection was skipped.
+**Why**: `cargo component` produces a Preview 2 component (`wasm32-wasip2`) using only the vendored WIT, which keeps builds reproducible. `greentic-dev component validate` confirms the artifact and metadata agree (WIT package IDs, world name, version pins) and, when WASI shims exist, inspects the manifest via the current host/runtime hooks. If WASI support is missing locally, validation still passes but prints a warning that manifest inspection was skipped.
 
 ### 5. Package for distribution (optional)
 
