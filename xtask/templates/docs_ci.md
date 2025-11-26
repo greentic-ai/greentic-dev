@@ -12,7 +12,7 @@ Keep PRs green by running these locally before pushing.
 
 ## Nightly builds
 
-Optionally schedule nightly jobs that enable feature flags (e.g., `conformance`) or run extended integration tests. Reuse the steps from the PR workflow and add artifact uploads for transcripts or snapshots.
+Optionally schedule nightly jobs that enable feature flags or run extended integration tests. Reuse the steps from the PR workflow and add artifact uploads for transcripts or snapshots.
 
 ## Secrets
 

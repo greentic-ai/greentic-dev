@@ -17,7 +17,7 @@ If you want to:
 
 | Crate / folder        | Purpose                                                                                  |
 |-----------------------|------------------------------------------------------------------------------------------|
-| `src/dev_runner/`     | Validates flows by compiling each node’s describe() schema and optional conformance kit. |
+| `src/dev_runner/`     | Validates flows by compiling each node’s describe() schema. |
 | `crates/dev-viewer`   | Renders transcripts and highlights defaults/overrides so you can reason about configs.    |
 | `greentic-dev component …` | Scaffolds, validates, and packs components (reusing the internal xtask tooling).    |
 | `docs/`               | High-level guides (runner, mocks, viewer, scaffolder, developer guide).                  |
@@ -49,7 +49,7 @@ Once installed, `greentic-dev` becomes a single entry point for flow validation 
 
 > **Requirements**
 >
-> - Rust 1.88+ (the repo pins this via `rust-toolchain.toml`)
+> - Rust 1.89+ (the repo pins this via `rust-toolchain.toml`)
 > - The component subcommands delegate to the `greentic-component` CLI. Install `greentic-component >= 0.3.2` (for example `cargo install greentic-component --force --version 0.3`) so `greentic-dev component new/templates/doctor` can run. You can also point to a custom binary and set defaults via `~/.greentic/config.toml`:
 > - The pack scaffolding command delegates to the `packc` CLI shipped with `greentic-pack`. Install it via `cargo install greentic-pack --bin packc --force` (or set `[tools.packc].path` in `~/.greentic/config.toml`) so `greentic-dev pack new` can run.
 >
@@ -113,7 +113,7 @@ which validates a `toolmap.yaml` (or directory) and reports tool health before y
 
 ## Why schema awareness matters
 
-Flows in Greentic are YAML documents describing a set of nodes. Historically it was easy to typo a field or forget a required input; you would only discover the mistake at runtime or during a conformance run. The runner in this repository flips that around:
+Flows in Greentic are YAML documents describing a set of nodes. Historically it was easy to typo a field or forget a required input; you would only discover the mistake at runtime. The runner in this repository flips that around:
 
 1. Load your flow YAML.
 2. For each node, call the component’s `describe()` (or use a registered schema stub).
@@ -168,7 +168,7 @@ so you immediately know which fields rely on defaults versus user input.
 | Doctor a component workspace    | `greentic-dev component doctor --path ./echo` *(delegated)*             |
 | Set default org/template        | `greentic-dev config set defaults.component.org ai.greentic`            |
 | Inspect MCP tool map (feature)  | `greentic-dev mcp doctor <toolmap>`                                     |
-| Run full test suite             | `cargo test` \| `cargo test --features conformance`                     |
+| Run full test suite             | `cargo test`                                                            |
 | Lint everything                 | `cargo clippy --all-targets --all-features -- -D warnings`              |
 | Format                          | `cargo fmt`                                                             |
 
@@ -189,7 +189,7 @@ greentic-dev component new my-component --org ai.greentic
 cd component-my-component
 ```
 
-**Why**: The scaffold wires up provider metadata, vendored WIT packages, and a `wit_bindgen` hello world so you can build immediately without chasing dependencies.
+**Why**: The scaffold wires up provider metadata, a `greentic-interfaces-guest` hello world, and a sensible default manifest so you can build immediately without vendoring WIT.
 
 Generated layout:
 
@@ -199,13 +199,7 @@ component-my-component/
 ├── provider.toml
 ├── README.md
 ├── schemas/v1/config.schema.json
-├── src/lib.rs
-└── wit/
-    ├── world.wit
-    └── deps/
-        ├── greentic-component-<ver>/
-        ├── greentic-host-import-<ver>/
-        └── greentic-types-core-<ver>/
+└── src/lib.rs
 ```
 
 ### 2. Model the configuration schema
@@ -214,7 +208,7 @@ Edit `schemas/v1/config.schema.json` with the fields and defaults your node expo
 
 ### 3. Implement behaviour in `src/lib.rs`
 
-The template already exports `greentic:component/node` and echoes a `message`. Replace the stub with real logic. If you need additional WIT packages, drop them under `wit/deps/` and add a line to `Cargo.toml`’s `package.metadata.component.target.dependencies`. Update `provider.toml` whenever capabilities, versions, or artifact paths change.
+The template already exports `greentic:component/node` and echoes a `message`, while calling into the guest crates for secrets/state/HTTP/telemetry. Replace the stub with real logic and import any extra guest modules you need (e.g., OAuth broker, lifecycle). Update `provider.toml` whenever capabilities, versions, or artifact paths change.
 
 ### 4. Build and validate
 
@@ -223,7 +217,7 @@ cargo component build --release --target wasm32-wasip2
 greentic-dev component validate --path .
 ```
 
-**Why**: `cargo component` produces a Preview 2 component (`wasm32-wasip2`) using only the vendored WIT, which keeps builds reproducible. `greentic-dev component validate` confirms the artifact and metadata agree (WIT package IDs, world name, version pins) and, when WASI shims exist, inspects the manifest via the current host/runtime hooks. If WASI support is missing locally, validation still passes but prints a warning that manifest inspection was skipped.
+**Why**: `cargo component` produces a Preview 2 component (`wasm32-wasip2`) using the published guest bindings, keeping builds reproducible without bundling local WIT. `greentic-dev component validate` confirms the artifact and metadata agree (embedded WIT package IDs, world name, version pins) and, when WASI shims exist, inspects the manifest via the current host/runtime hooks. If WASI support is missing locally, validation still passes but prints a warning that manifest inspection was skipped.
 
 ### 5. Package for distribution (optional)
 
@@ -257,7 +251,7 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 ```
 
-When Greentic interface versions update, re-vendor the WIT under `wit/deps/` (re-run the scaffold or copy from the cargo registry) and adjust `provider.toml` + `Cargo.toml` to match. This ensures validation continues to run purely against published crates.
+When Greentic interface versions update, bump the guest crate version in the scaffolder and regenerate as needed so the bindings and provider metadata stay aligned.
 
 * Rust API docs (`cargo doc` output),
 * Runner, mocks, viewer, scaffolder guides, and
@@ -275,10 +269,6 @@ Finally, publish your component’s own schema (usually under `component-<name>/
 * **Scaffolder internals** – `docs/scaffolder.md`
 * **Developer guide (HTML)** – `https://greentic-ai.github.io/greentic-dev/docs/developer-guide.html`
 * **GitHub Pages index** – `https://greentic-ai.github.io/greentic-dev/`
-
-If you need help wiring your component into the larger conformance suites, check the `greentic-conformance` crate (available on crates.io) and wire its flows into the `greentic-dev` runner APIs.
-
----
 
 ## CLI reference
 

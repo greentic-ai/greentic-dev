@@ -62,8 +62,7 @@ The scaffold contains:
 | `Cargo.toml` | Component manifest (wired for `cargo component`). |
 | `provider.toml` | Canonical metadata that drives packaging + validation. |
 | `schemas/v1/config.schema.json` | JSON Schema for node configuration. |
-| `src/lib.rs` | The component implementation (starts with an echo example). |
-| `wit/world.wit` & `wit/deps/` | Vendored WIT packages pinned to the Greentic interface versions pulled from the workspace `Cargo.lock`. |
+| `src/lib.rs` | The component implementation (starts with an echo example wired to guest imports). |
 | `README.md` | Mini playbook that you can expand for this specific component. |
 
 Open `src/lib.rs` and confirm the stub echoes the `message` field back to the caller—that is our “hello world”.
@@ -78,7 +77,7 @@ From inside the component directory:
 cargo component build --release --target wasm32-wasip2
 ```
 
-This emits `target/wasm32-wasip2/release/hello-world.wasm` using only the vendored WIT dependencies.
+This emits `target/wasm32-wasip2/release/hello-world.wasm` using the published `greentic-interfaces-guest` bindings—no vendored WIT required.
 
 If you ever see a network-related error, double-check that `cargo fetch` succeeded earlier. The Greentic scaffolder assumes offline builds, so the `cargo` registry cache needs to be populated once up front.
 
@@ -98,10 +97,13 @@ You should see output similar to:
 ✓ Validated hello-world 0.1.0
   artifact: .../component-hello-world/target/wasm32-wasip2/release/hello-world.wasm
   sha256 : <hash>
-  world  : root:component/root
+  world  : greentic:component/component@0.4.0
   packages:
     - greentic:component@0.4.0
-    - wasi:cli@0.2.3
+    - greentic:secrets@1.0.0
+    - greentic:state@1.0.0
+    - greentic:http@1.0.0
+    - greentic:telemetry@1.0.0
     ...
   exports: <skipped - missing WASI host support>
 ```
@@ -164,7 +166,7 @@ Successful validation produces canonical JSON you can feed into review tools. Wh
 
 With the skeleton in place you can now:
 
-1. **Customize behavior.** Edit `src/lib.rs` to perform real work instead of echoing input. Add any additional WIT dependencies in `Cargo.toml` if your component needs other Greentic interfaces.
+1. **Customize behavior.** Edit `src/lib.rs` to perform real work instead of echoing input. Pull in additional guest modules from `greentic-interfaces-guest` if your component needs other Greentic interfaces.
 2. **Expand the schema.** Update `schemas/v1/config.schema.json` with required fields, defaults, and examples.
 3. **Document configuration and testing.** Extend `README.md` (scaffolded in the component) so other developers know how to run and validate it.
 4. **Add tests.** Bring in `cargo test` suites or golden tests. The Greentic toolchain honors `GOLDEN_ACCEPT=1` for regeneration, the same as other repos.

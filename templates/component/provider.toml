@@ -10,16 +10,20 @@ homepage    = "https://github.com/greentic-ai/{{component_name}}"
 interfaces_version = "{{interfaces_version}}"
 types_version      = "{{types_version}}"
 component_runtime  = "{{component_runtime_version}}"
-world              = "greentic:component/world@{{component_world_version}}"
+world              = "greentic:component/component@{{component_world_version}}"
 wit_packages = [
-  "greentic:component@{{component_world_version}}"
+  "greentic:component@{{component_world_version}}",
+  "greentic:secrets@{{secrets_wit_version}}",
+  "greentic:state@{{state_wit_version}}",
+  "greentic:http@{{http_wit_version}}",
+  "greentic:telemetry@{{telemetry_wit_version}}",
 ]
 
 # --- runtime capabilities ---
 [capabilities]
-secrets    = false
+secrets    = true
 telemetry  = true
-network    = false
+network    = true
 filesystem = false
 
 # --- exports/imports ---

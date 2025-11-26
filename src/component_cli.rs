@@ -38,10 +38,6 @@ const TEMPLATE_README: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/templates/component/README.md"
 ));
-const TEMPLATE_WORLD: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/templates/component/wit/world.wit"
-));
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ProviderMetadata {
@@ -126,19 +122,15 @@ struct ValidationReport {
 }
 
 #[derive(Debug, Clone)]
-struct WitInfo {
-    version: String,
-    dir: PathBuf,
-}
-
-#[derive(Debug, Clone)]
 struct Versions {
     interfaces: String,
     types: String,
     component_runtime: String,
-    component_wit: WitInfo,
-    host_import_wit: WitInfo,
-    types_core_wit: WitInfo,
+    component_wit_version: String,
+    secrets_wit_version: String,
+    state_wit_version: String,
+    http_wit_version: String,
+    telemetry_wit_version: String,
 }
 
 impl Versions {
@@ -148,17 +140,21 @@ impl Versions {
         let component_runtime_version = resolved_version("greentic-component")?;
 
         let interfaces_root = find_crate_source("greentic-interfaces", &interfaces_version)?;
-        let component_wit = detect_wit_package(&interfaces_root, "component")?;
-        let host_import_wit = detect_wit_package(&interfaces_root, "host-import")?;
-        let types_core_wit = detect_wit_package(&interfaces_root, "types-core")?;
+        let component_wit_version = detect_component_node_world_version(&interfaces_root)?;
+        let secrets_wit_version = detect_wit_package_version(&interfaces_root, "secrets")?;
+        let state_wit_version = detect_wit_package_version(&interfaces_root, "state")?;
+        let http_wit_version = detect_wit_package_version(&interfaces_root, "http")?;
+        let telemetry_wit_version = detect_wit_package_version(&interfaces_root, "telemetry")?;
 
         Ok(Self {
             interfaces: interfaces_version,
             types: types_version,
             component_runtime: component_runtime_version,
-            component_wit,
-            host_import_wit,
-            types_core_wit,
+            component_wit_version,
+            secrets_wit_version,
+            state_wit_version,
+            http_wit_version,
+            telemetry_wit_version,
         })
     }
 }
@@ -243,7 +239,6 @@ pub fn new_component(args: NewComponentArgs) -> Result<()> {
 
     create_dir(component_dir.join("src"))?;
     create_dir(component_dir.join("schemas/v1"))?;
-    create_dir(component_dir.join("wit/deps"))?;
 
     write_template(
         &component_dir.join("Cargo.toml"),
@@ -266,13 +261,6 @@ pub fn new_component(args: NewComponentArgs) -> Result<()> {
         TEMPLATE_SCHEMA_CONFIG,
         &context,
     )?;
-    write_template(
-        &component_dir.join("wit/world.wit"),
-        TEMPLATE_WORLD,
-        &context,
-    )?;
-
-    vendor_wit_packages(&component_dir, &context.versions)?;
 
     println!(
         "Component `{}` scaffolded successfully.",
@@ -363,36 +351,51 @@ fn render_template(template: &str, context: &TemplateContext) -> String {
     output
 }
 
-fn vendor_wit_packages(component_dir: &Path, versions: &Versions) -> Result<()> {
-    let deps_dir = component_dir.join("wit/deps");
-    create_dir(deps_dir.clone())?;
+fn detect_component_node_world_version(crate_root: &Path) -> Result<String> {
+    let wit_dir = crate_root.join("wit");
+    let namespace_dir = wit_dir.join("greentic");
+    let prefix = "component@";
+    let mut best: Option<(Version, PathBuf)> = None;
 
-    for info in [
-        &versions.component_wit,
-        &versions.host_import_wit,
-        &versions.types_core_wit,
-    ] {
-        let package_name = info
-            .dir
+    for entry in fs::read_dir(&namespace_dir).with_context(|| {
+        format!(
+            "failed to read namespace directory {}",
+            namespace_dir.display()
+        )
+    })? {
+        let entry = entry?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = entry
             .file_name()
-            .ok_or_else(|| anyhow!("invalid wit directory {}", info.dir.display()))?
-            .to_string_lossy()
-            .replace('@', "-");
-        let namespace = info
-            .dir
-            .parent()
-            .and_then(|path| path.file_name())
-            .ok_or_else(|| anyhow!("invalid wit namespace for {}", info.dir.display()))?
-            .to_string_lossy()
-            .into_owned();
-        let dest = deps_dir.join(format!("{namespace}-{package_name}"));
-        copy_dir_recursive(&info.dir, &dest)?;
+            .into_string()
+            .map_err(|_| anyhow!("non-unicode filename under {}", namespace_dir.display()))?;
+        if let Some(rest) = name.strip_prefix(prefix) {
+            let version = Version::parse(rest)
+                .with_context(|| format!("invalid semver `{rest}` for {prefix}"))?;
+            let package_path = path.join("package.wit");
+            let contents = fs::read_to_string(&package_path).with_context(|| {
+                format!("failed to read package file {}", package_path.display())
+            })?;
+            if contents.contains("export node") {
+                match &best {
+                    Some((best_ver, _)) if version <= *best_ver => {}
+                    _ => best = Some((version, path)),
+                }
+            }
+        }
     }
 
-    Ok(())
+    if let Some((version, _)) = best {
+        return Ok(version.to_string());
+    }
+
+    detect_wit_package_version(crate_root, "component")
 }
 
-fn detect_wit_package(crate_root: &Path, prefix: &str) -> Result<WitInfo> {
+fn detect_wit_package_version(crate_root: &Path, prefix: &str) -> Result<String> {
     let wit_dir = crate_root.join("wit");
     let namespace_dir = wit_dir.join("greentic");
     let prefix = format!("{prefix}@");
@@ -423,10 +426,7 @@ fn detect_wit_package(crate_root: &Path, prefix: &str) -> Result<WitInfo> {
     }
 
     match best {
-        Some((version, dir)) => Ok(WitInfo {
-            version: version.to_string(),
-            dir,
-        }),
+        Some((version, _)) => Ok(version.to_string()),
         None => Err(anyhow!(
             "unable to locate WIT package `{}` under {}",
             prefix,
@@ -517,36 +517,9 @@ fn find_crate_source(crate_name: &str, version: &str) -> Result<PathBuf> {
     ))
 }
 
-fn copy_dir_recursive(src: &Path, dest: &Path) -> Result<()> {
-    if dest.exists() {
-        fs::remove_dir_all(dest).with_context(|| format!("failed to remove {}", dest.display()))?;
-    }
-    fs::create_dir_all(dest).with_context(|| format!("failed to create {}", dest.display()))?;
-    for entry in
-        fs::read_dir(src).with_context(|| format!("failed to read directory {}", src.display()))?
-    {
-        let entry = entry?;
-        let src_path = entry.path();
-        let dest_path = dest.join(entry.file_name());
-        if src_path.is_dir() {
-            copy_dir_recursive(&src_path, &dest_path)?;
-        } else {
-            fs::copy(&src_path, &dest_path).with_context(|| {
-                format!(
-                    "failed to copy {} to {}",
-                    src_path.display(),
-                    dest_path.display()
-                )
-            })?;
-        }
-    }
-    Ok(())
-}
-
 struct TemplateContext {
     component_name: String,
     component_kebab: String,
-    versions: Versions,
     placeholders: HashMap<String, String>,
 }
 
@@ -581,21 +554,29 @@ impl TemplateContext {
         );
         placeholders.insert(
             "component_world_version".into(),
-            versions.component_wit.version.clone(),
+            versions.component_wit_version.clone(),
         );
         placeholders.insert(
-            "host_import_version".into(),
-            versions.host_import_wit.version.clone(),
+            "interfaces_guest_version".into(),
+            versions.interfaces.clone(),
         );
         placeholders.insert(
-            "types_core_version".into(),
-            versions.types_core_wit.version.clone(),
+            "secrets_wit_version".into(),
+            versions.secrets_wit_version.clone(),
+        );
+        placeholders.insert(
+            "state_wit_version".into(),
+            versions.state_wit_version.clone(),
+        );
+        placeholders.insert("http_wit_version".into(), versions.http_wit_version.clone());
+        placeholders.insert(
+            "telemetry_wit_version".into(),
+            versions.telemetry_wit_version.clone(),
         );
 
         Ok(Self {
             component_name,
             component_kebab,
-            versions,
             placeholders,
         })
     }
