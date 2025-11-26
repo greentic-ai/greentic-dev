@@ -67,4 +67,15 @@ jobs:
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: cargo publish --locked
+        run: |
+          set -eo pipefail
+          if output=$(cargo publish --locked 2>&1); then
+            printf "%s\n" "$output"
+          else
+            printf "%s\n" "$output"
+            if printf "%s\n" "$output" | grep -qi "already exists on crates.io index"; then
+              echo "crate version already published; skipping publish step."
+            else
+              exit 1
+            fi
+          fi
