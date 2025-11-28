@@ -7,11 +7,11 @@ use anyhow::{Context, Result, bail};
 use greentic_flow::flow_bundle::load_and_validate_bundle;
 use greentic_pack::builder::{
     ComponentArtifact, ComponentPin as PackComponentPin, FlowBundle as PackFlowBundle, ImportRef,
-    NodeRef as PackNodeRef, PackBuilder, PackMeta, Provenance, Signing,
+    NodeRef as PackNodeRef, PACK_VERSION, PackBuilder, PackMeta, Provenance, Signing,
 };
 use greentic_pack::events::EventsSection;
 use greentic_pack::messaging::MessagingSection;
-use greentic_pack::repo::RepoPackSection;
+use greentic_pack::repo::{InterfaceBinding, RepoPackSection};
 use greentic_types::PackKind;
 use semver::Version;
 use serde::Deserialize;
@@ -245,14 +245,19 @@ fn load_pack_meta(
         .unwrap_or("0.1.0")
         .parse::<Version>()
         .context("invalid pack version in metadata")?;
+    let pack_version = config.pack_version.unwrap_or(PACK_VERSION);
     let name = config.name.unwrap_or_else(|| bundle.id.clone());
     let description = config.description;
     let authors = config.authors.unwrap_or_default();
     let license = config.license;
+    let homepage = config.homepage;
+    let support = config.support;
+    let vendor = config.vendor;
     let kind = config.kind;
     let events = config.events;
     let repo = config.repo;
     let messaging = config.messaging;
+    let interfaces = config.interfaces.unwrap_or_default();
     let imports = config
         .imports
         .unwrap_or_default()
@@ -273,12 +278,16 @@ fn load_pack_meta(
     let annotations = config.annotations.map(toml_to_json_map).unwrap_or_default();
 
     Ok(PackMeta {
+        pack_version,
         pack_id,
         version,
         name,
         description,
         authors,
         license,
+        homepage,
+        support,
+        vendor,
         imports,
         kind,
         entry_flows,
@@ -286,6 +295,7 @@ fn load_pack_meta(
         events,
         repo,
         messaging,
+        interfaces,
         annotations,
     })
 }
@@ -336,6 +346,7 @@ fn git_remote() -> Result<String> {
 
 #[derive(Debug, Deserialize, Default)]
 struct PackMetaToml {
+    pack_version: Option<u32>,
     pack_id: Option<String>,
     version: Option<String>,
     name: Option<String>,
@@ -343,10 +354,14 @@ struct PackMetaToml {
     description: Option<String>,
     authors: Option<Vec<String>>,
     license: Option<String>,
+    homepage: Option<String>,
+    support: Option<String>,
+    vendor: Option<String>,
     entry_flows: Option<Vec<String>>,
     events: Option<EventsSection>,
     repo: Option<RepoPackSection>,
     messaging: Option<MessagingSection>,
+    interfaces: Option<Vec<InterfaceBinding>>,
     imports: Option<Vec<ImportToml>>,
     annotations: Option<toml::value::Table>,
     created_at_utc: Option<String>,
