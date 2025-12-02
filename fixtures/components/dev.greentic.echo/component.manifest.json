@@ -3,12 +3,8 @@
     "component_wasm": "component.wasm"
   },
   "capabilities": {
-    "http": {
-      "allow_insecure": true,
-      "domains": [
-        "dev.greentic.local"
-      ]
-    }
+    "wasi": {},
+    "host": {}
   },
   "describe_export": "describe",
   "hashes": {
@@ -22,6 +18,15 @@
     "wall_time_ms": 500
   },
   "name": "Dev Echo",
+  "supports": [
+    "messaging"
+  ],
+  "profiles": {
+    "default": "dev",
+    "supported": [
+      "dev"
+    ]
+  },
   "provenance": {
     "builder": "fixture-gen",
     "built_at_utc": "2024-01-01T00:00:00Z",
