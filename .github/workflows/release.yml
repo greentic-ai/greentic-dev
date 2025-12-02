@@ -141,6 +141,16 @@ jobs:
     if: needs.publish.result == 'success' && needs.dist.result == 'success'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Compute crate version
+        id: version
+        run: |
+          VERSION=$(cargo metadata --format-version 1 --no-deps | python -c 'import json,sys; data=json.load(sys.stdin); print(next(p["version"] for p in data["packages"] if p.get("name")=="greentic-dev"))')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -152,7 +162,8 @@ jobs:
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: release-${{ github.run_number }}
+          tag_name: v${{ steps.version.outputs.version }}
           target_commitish: ${{ github.sha }}
+          name: greentic-dev v${{ steps.version.outputs.version }}
           files: dist/**/*.tgz
           generate_release_notes: true
