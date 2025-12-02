@@ -1518,9 +1518,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-component"
-version = "0.4.4"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad09c8978bf8242462a70c42cdf4a65b8decbfda56b5645058b079c7bfe8c105"
+checksum = "826f41dea3df7fc070ef84889cf05f08f9e3fbc5405d1806ef380f4a8b9c9935"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1558,7 +1558,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-dev"
-version = "0.4.3"
+version = "0.4.5"
 dependencies = [
  "anyhow",
  "clap",
@@ -1678,9 +1678,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-pack"
-version = "0.4.7"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "958a6c07377953389d34f55a1c32685e6066cffb1cdb65761faac9be45613a33"
+checksum = "7415578e56b08e7dce23c12e4a75f78c017e560c12c651c5f23408bfe80e682c"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -4754,13 +4754,13 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.18.1"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f87b8aa10b915a06587d0dec516c282ff295b475d94abf425d62b57710070a2"
+checksum = "e2e054861b4bd027cd373e18e8d8d8e6548085000e41290d95ce0c373a654b4a"
 dependencies = [
  "getrandom 0.3.4",
  "js-sys",
- "serde",
+ "serde_core",
  "wasm-bindgen",
 ]
 

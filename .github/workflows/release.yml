@@ -150,13 +150,13 @@ jobs:
           cp "$BIN_PATH" "$STAGING/"
           cp README.md LICENSE-MIT LICENSE-APACHE "$STAGING/"
 
-          tar czf "$STAGING.tar.gz" -C "$STAGING" .
+          tar czf "$STAGING.tgz" -C "$STAGING" .
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: greentic-dev-${{ matrix.target }}
-          path: dist/greentic-dev-v*-${{ matrix.target }}.tar.gz
+          path: dist/greentic-dev-v*-${{ matrix.target }}.tgz
           if-no-files-found: error
 
   release:
@@ -177,5 +177,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/**/*.tar.gz
+          files: dist/**/*.tgz
           generate_release_notes: true
