@@ -130,7 +130,7 @@ jobs:
                   print(pkg["version"])
                   sys.exit(0)
           sys.exit("failed to find greentic-dev version")
-PY
+          PY
           )
 
           TARGET="${{ matrix.target }}"
