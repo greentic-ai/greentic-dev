@@ -152,7 +152,7 @@ jobs:
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: release-${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           files: dist/**/*.tgz
           generate_release_notes: true
