@@ -53,7 +53,7 @@ tempfile = "3"
 dirs = "6"
 which = "8"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "6.0", default-features = false, features = ["deflate"] }
 bytes = "1.7"
 async-compression = "0.4"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
