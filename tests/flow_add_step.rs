@@ -1,11 +1,11 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use greentic_dev::cli::{ConfigFlowModeArg, FlowAddStepArgs};
 use greentic_dev::flow_cmd::parse_config_flow_output;
 use greentic_dev::flow_cmd::run_add_step;
 
-fn write_test_flow(root: &PathBuf) {
+fn write_test_flow(root: &Path) {
     let flows = root.join("flows");
     fs::create_dir_all(&flows).unwrap();
     let flow = "schema_version: 1
@@ -28,7 +28,7 @@ fn parse_config_flow_rejects_invalid() {
     );
 }
 
-fn write_component_bundle(tmp: &PathBuf) -> PathBuf {
+fn write_component_bundle(tmp: &Path) -> PathBuf {
     let bundle = tmp.join("component-bundle");
     let flows = bundle.join("flows");
     fs::create_dir_all(&flows).unwrap();

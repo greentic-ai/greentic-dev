@@ -33,6 +33,7 @@
     "git_commit": "0000000",
     "toolchain": "rustc"
   },
+  "config_schema": {},
   "version": "0.1.0",
   "world": "greentic:component/component@0.4.0"
 }

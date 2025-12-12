@@ -2,7 +2,8 @@ use std::fs;
 use std::path::Path;
 
 use crate::cli::{ConfigFlowModeArg, FlowAddStepArgs};
-use crate::pack_init::{self, PackInitIntent};
+use crate::component_add::run_component_add;
+use crate::pack_init::PackInitIntent;
 use crate::path_safety::normalize_under_root;
 use anyhow::{Context, Result, anyhow, bail};
 use greentic_flow::flow_bundle::load_and_validate_bundle;
@@ -206,7 +207,7 @@ fn resolve_component_bundle(coordinate: &str, profile: Option<&str>) -> Result<P
     if path.exists() {
         return Ok(path);
     }
-    let dir = pack_init::run_component_add(coordinate, profile, PackInitIntent::Dev)?;
+    let dir = run_component_add(coordinate, profile, PackInitIntent::Dev)?;
     Ok(dir)
 }
 

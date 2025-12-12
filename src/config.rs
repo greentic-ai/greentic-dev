@@ -9,10 +9,8 @@ use serde::Deserialize;
 pub struct GreenticConfig {
     #[serde(default)]
     pub tools: ToolsSection,
-    #[allow(dead_code)]
     #[serde(default)]
     pub defaults: DefaultsSection,
-    #[allow(dead_code)]
     #[serde(default)]
     pub distributor: DistributorSection,
 }
@@ -23,6 +21,8 @@ pub struct ToolsSection {
     pub greentic_component: ToolEntry,
     #[serde(rename = "packc", default)]
     pub packc: ToolEntry,
+    #[serde(rename = "packc-path", default)]
+    pub packc_path: ToolEntry,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -47,18 +47,30 @@ pub struct ComponentDefaults {
 #[derive(Debug, Default, Deserialize)]
 pub struct DistributorSection {
     /// Map of profile name -> profile configuration.
-    #[allow(dead_code)]
     #[serde(default, flatten)]
     pub profiles: HashMap<String, DistributorProfileConfig>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DistributorProfileConfig {
-    #[allow(dead_code)]
-    pub url: String,
-    #[allow(dead_code)]
+    /// Base URL for the distributor (preferred field; falls back to `url` if set).
+    #[serde(default)]
+    pub base_url: Option<String>,
+    /// Deprecated alias for base_url.
+    #[serde(default)]
+    pub url: Option<String>,
+    /// API token; allow env:VAR indirection.
     #[serde(default)]
     pub token: Option<String>,
+    /// Tenant identifier for distributor requests.
+    #[serde(default)]
+    pub tenant_id: Option<String>,
+    /// Environment identifier for distributor requests.
+    #[serde(default)]
+    pub environment_id: Option<String>,
+    /// Additional headers (optional).
+    #[serde(default)]
+    pub headers: Option<HashMap<String, String>>,
 }
 
 pub fn load() -> Result<GreenticConfig> {
@@ -90,6 +102,14 @@ fn config_path_override(path_override: Option<&str>) -> Option<PathBuf> {
 }
 
 pub fn config_path() -> Option<PathBuf> {
+    // Prefer XDG-style config path, but fall back to legacy ~/.greentic/config.toml.
+    if let Some(mut dir) = dirs::config_dir() {
+        dir.push("greentic-dev");
+        dir.push("config.toml");
+        if dir.exists() {
+            return Some(dir);
+        }
+    }
     dirs::home_dir().map(|mut home| {
         home.push(".greentic");
         home.push("config.toml");

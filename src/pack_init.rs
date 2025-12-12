@@ -168,14 +168,14 @@ fn write_pack_to_cache(resolved: &DevResolveResponse, bytes: &Bytes) -> Result<P
     Ok(file_path)
 }
 
-fn cache_slug(resolved: &DevResolveResponse) -> String {
+pub fn cache_slug(resolved: &DevResolveResponse) -> String {
     if let Some(digest) = &resolved.digest {
         return digest.replace(':', "-");
     }
     slugify(&format!("{}-{}", resolved.name, resolved.version))
 }
 
-fn slugify(raw: &str) -> String {
+pub fn slugify(raw: &str) -> String {
     let mut out = String::new();
     let mut prev_dash = false;
     for ch in raw.chars() {
@@ -191,7 +191,7 @@ fn slugify(raw: &str) -> String {
     out.trim_matches('-').to_string()
 }
 
-fn manifest_path() -> Result<PathBuf> {
+pub fn manifest_path() -> Result<PathBuf> {
     let mut root = std::env::current_dir().context("unable to determine current directory")?;
     root.push(".greentic");
     fs::create_dir_all(&root).with_context(|| format!("failed to create {}", root.display()))?;
@@ -199,17 +199,17 @@ fn manifest_path() -> Result<PathBuf> {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct WorkspaceManifest {
-    components: Vec<WorkspaceComponent>,
+pub struct WorkspaceManifest {
+    pub components: Vec<WorkspaceComponent>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct WorkspaceComponent {
-    coordinate: String,
-    entry: ComponentEntry,
+pub struct WorkspaceComponent {
+    pub coordinate: String,
+    pub entry: ComponentEntry,
 }
 
-fn update_workspace_manifest(resolved: &DevResolveResponse, cache_path: &Path) -> Result<()> {
+pub fn update_workspace_manifest(resolved: &DevResolveResponse, cache_path: &Path) -> Result<()> {
     let manifest_path = manifest_path()?;
     let mut manifest: WorkspaceManifest = if manifest_path.exists() {
         let data = fs::read_to_string(&manifest_path)

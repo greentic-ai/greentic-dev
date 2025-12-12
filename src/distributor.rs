@@ -106,16 +106,32 @@ pub struct DistributorProfile {
     pub name: String,
     pub url: String,
     pub token: Option<String>,
+    pub tenant_id: String,
+    pub environment_id: String,
+    pub headers: Option<HashMap<String, String>>,
 }
 
 impl DistributorProfile {
     fn from_pair(name: &str, cfg: &DistributorProfileConfig) -> Result<Self> {
         let token = resolve_token(cfg.token.clone())?;
-        let url = cfg.url.trim_end_matches('/').to_string();
+        let base_url = cfg
+            .base_url
+            .as_ref()
+            .or(cfg.url.as_ref())
+            .map(|s| s.trim_end_matches('/').to_string())
+            .unwrap_or_else(|| "http://localhost:8080".to_string());
+        let tenant_id = cfg.tenant_id.clone().unwrap_or_else(|| "local".to_string());
+        let environment_id = cfg
+            .environment_id
+            .clone()
+            .unwrap_or_else(|| "dev".to_string());
         Ok(Self {
             name: name.to_string(),
-            url,
+            url: base_url,
             token,
+            tenant_id,
+            environment_id,
+            headers: cfg.headers.clone(),
         })
     }
 }
@@ -129,7 +145,7 @@ pub fn resolve_profile(
     let map: &HashMap<String, DistributorProfileConfig> = &config.distributor.profiles;
     let Some(profile_cfg) = map.get(profile_name) else {
         bail!(
-            "distributor profile `{profile_name}` not found; configure it in ~/.greentic/config.toml"
+            "distributor profile `{profile_name}` not found; configure it in ~/.config/greentic-dev/config.toml"
         );
     };
     DistributorProfile::from_pair(profile_name, profile_cfg)

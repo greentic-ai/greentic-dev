@@ -1,0 +1,136 @@
+#[cfg(target_arch = "wasm32")]
+#[used]
+#[unsafe(link_section = ".greentic.wasi")]
+static WASI_TARGET_MARKER: [u8; 13] = *b"wasm32-wasip2";
+
+#[cfg(target_arch = "wasm32")]
+mod component {
+    use greentic_interfaces_guest::component::node::{
+        self, ExecCtx, InvokeResult, LifecycleStatus, StreamEvent,
+    };
+
+    use super::{describe_payload, handle_message};
+
+    pub(super) struct Component;
+
+    impl node::Guest for Component {
+        fn get_manifest() -> String {
+            describe_payload()
+        }
+
+        fn on_start(_ctx: ExecCtx) -> Result<LifecycleStatus, String> {
+            Ok(LifecycleStatus::Ok)
+        }
+
+        fn on_stop(_ctx: ExecCtx, _reason: String) -> Result<LifecycleStatus, String> {
+            Ok(LifecycleStatus::Ok)
+        }
+
+        fn invoke(_ctx: ExecCtx, op: String, input: String) -> InvokeResult {
+            InvokeResult::Ok(handle_message(&op, &input))
+        }
+
+        fn invoke_stream(_ctx: ExecCtx, op: String, input: String) -> Vec<StreamEvent> {
+            vec![
+                StreamEvent::Progress(0),
+                StreamEvent::Data(handle_message(&op, &input)),
+                StreamEvent::Done,
+            ]
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+mod exports {
+    use greentic_interfaces_guest::component::node;
+    use super::component::Component;
+
+    #[unsafe(export_name = "greentic:component/node@0.5.0#get-manifest")]
+    unsafe extern "C" fn export_get_manifest() -> *mut u8 {
+        unsafe { node::_export_get_manifest_cabi::<Component>() }
+    }
+
+    #[unsafe(export_name = "cabi_post_greentic:component/node@0.5.0#get-manifest")]
+    unsafe extern "C" fn post_return_get_manifest(arg0: *mut u8) {
+        unsafe { node::__post_return_get_manifest::<Component>(arg0) };
+    }
+
+    #[unsafe(export_name = "greentic:component/node@0.5.0#on-start")]
+    unsafe extern "C" fn export_on_start(arg0: *mut u8) -> *mut u8 {
+        unsafe { node::_export_on_start_cabi::<Component>(arg0) }
+    }
+
+    #[unsafe(export_name = "cabi_post_greentic:component/node@0.5.0#on-start")]
+    unsafe extern "C" fn post_return_on_start(arg0: *mut u8) {
+        unsafe { node::__post_return_on_start::<Component>(arg0) };
+    }
+
+    #[unsafe(export_name = "greentic:component/node@0.5.0#on-stop")]
+    unsafe extern "C" fn export_on_stop(arg0: *mut u8) -> *mut u8 {
+        unsafe { node::_export_on_stop_cabi::<Component>(arg0) }
+    }
+
+    #[unsafe(export_name = "cabi_post_greentic:component/node@0.5.0#on-stop")]
+    unsafe extern "C" fn post_return_on_stop(arg0: *mut u8) {
+        unsafe { node::__post_return_on_stop::<Component>(arg0) };
+    }
+
+    #[unsafe(export_name = "greentic:component/node@0.5.0#invoke")]
+    unsafe extern "C" fn export_invoke(arg0: *mut u8) -> *mut u8 {
+        unsafe { node::_export_invoke_cabi::<Component>(arg0) }
+    }
+
+    #[unsafe(export_name = "cabi_post_greentic:component/node@0.5.0#invoke")]
+    unsafe extern "C" fn post_return_invoke(arg0: *mut u8) {
+        unsafe { node::__post_return_invoke::<Component>(arg0) };
+    }
+
+    #[unsafe(export_name = "greentic:component/node@0.5.0#invoke-stream")]
+    unsafe extern "C" fn export_invoke_stream(arg0: *mut u8) -> *mut u8 {
+        unsafe { node::_export_invoke_stream_cabi::<Component>(arg0) }
+    }
+
+    #[unsafe(export_name = "cabi_post_greentic:component/node@0.5.0#invoke-stream")]
+    unsafe extern "C" fn post_return_invoke_stream(arg0: *mut u8) {
+        unsafe { node::__post_return_invoke_stream::<Component>(arg0) };
+    }
+}
+
+pub fn describe_payload() -> String {
+    serde_json::json!({
+        "component": {
+            "name": "{{ name }}",
+            "org": "{{ org }}",
+            "version": "{{ version }}",
+            "world": "{{ wit_world }}",
+            "schemas": {
+                "component": "schemas/component.schema.json",
+                "input": "schemas/io/input.schema.json",
+                "output": "schemas/io/output.schema.json"
+            }
+        }
+    })
+    .to_string()
+}
+
+pub fn handle_message(operation: &str, input: &str) -> String {
+    format!("{{ name }}::{operation} => {}", input.trim())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn describe_payload_is_json() {
+        let payload = describe_payload();
+        let json: serde_json::Value = serde_json::from_str(&payload).expect("valid json");
+        assert_eq!(json["component"]["name"], "{{ name }}");
+    }
+
+    #[test]
+    fn handle_message_round_trips() {
+        let value = handle_message("handle", "demo");
+        assert!(value.contains("demo"));
+    }
+}

@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use greentic_dev::pack_init::{PackInitIntent, run, run_component_add};
@@ -12,7 +12,7 @@ use tempfile::tempdir;
 
 static ENV_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
-fn write_config(base: &PathBuf, url: &str) -> PathBuf {
+fn write_config(base: &Path, url: &str) -> PathBuf {
     let config_dir = base.join(".greentic");
     fs::create_dir_all(&config_dir).unwrap();
     let path = config_dir.join("config.toml");

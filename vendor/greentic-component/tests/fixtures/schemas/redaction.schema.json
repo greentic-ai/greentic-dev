@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "credentials": {
+      "type": "object",
+      "x-capability": "secrets",
+      "properties": {
+        "api_key": {
+          "type": "string",
+          "x-redact": true
+        },
+        "scope": {
+          "type": "string",
+          "x-default-applied": "tenant_scope"
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "properties": {
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "x-capability": "net"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,743 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PackSpec",
+  "type": "object",
+  "properties": {
+    "annotations": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {}
+    },
+    "authors": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "entry_flows": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "events": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EventsSection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "flow_files": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "homepage": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "id": {
+      "type": "string"
+    },
+    "imports_required": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/InterfaceBinding"
+      }
+    },
+    "kind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null,
+      "enum": [
+        "application",
+        "source-provider",
+        "scanner",
+        "signing",
+        "attestation",
+        "policy-engine",
+        "oci-provider",
+        "billing-provider",
+        "search-provider",
+        "recommendation-provider",
+        "distribution-bundle",
+        "rollout-strategy"
+      ]
+    },
+    "license": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "mcp_components": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/McpComponentSpec"
+      }
+    },
+    "messaging": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MessagingSection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "packVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "repo": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RepoPackSection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "support": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "template_dirs": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "vendor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "version": {
+      "type": "string"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ComponentDescriptor"
+      },
+      "default": []
+    },
+    "distribution": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DistributionSection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "packVersion",
+    "id",
+    "version"
+  ],
+  "$defs": {
+    "EventProviderCapabilities": {
+      "type": "object",
+      "properties": {
+        "ordering": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OrderingKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reliability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReliabilityKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "transport": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TransportKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "EventProviderKind": {
+      "type": "string",
+      "enum": [
+        "broker",
+        "source",
+        "sink",
+        "bridge"
+      ]
+    },
+    "EventProviderSpec": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "$ref": "#/$defs/EventProviderCapabilities",
+          "default": {}
+        },
+        "component": {
+          "type": "string"
+        },
+        "custom_flow": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "default_flow": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/EventProviderKind"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "component"
+      ]
+    },
+    "EventsSection": {
+      "type": "object",
+      "properties": {
+        "providers": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EventProviderSpec"
+          }
+        }
+      }
+    },
+    "InterfaceBinding": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "package": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "world": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "package",
+        "world",
+        "version"
+      ]
+    },
+    "McpComponentSpec": {
+      "type": "object",
+      "properties": {
+        "adapter_template": {
+          "type": "string",
+          "default": "default"
+        },
+        "id": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string",
+          "default": "25.06.18"
+        },
+        "router_ref": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "router_ref"
+      ]
+    },
+    "MessagingAdapter": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MessagingAdapterCapabilities"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "component": {
+          "type": "string"
+        },
+        "custom_flow": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "default_flow": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/MessagingAdapterKind"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "component"
+      ]
+    },
+    "MessagingAdapterCapabilities": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "MessagingAdapterKind": {
+      "type": "string",
+      "enum": [
+        "ingress",
+        "egress",
+        "ingress-egress"
+      ]
+    },
+    "MessagingSection": {
+      "type": "object",
+      "properties": {
+        "adapters": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/MessagingAdapter"
+          }
+        }
+      }
+    },
+    "OrderingKind": {
+      "type": "string",
+      "enum": [
+        "none",
+        "per_key",
+        "global"
+      ]
+    },
+    "ReliabilityKind": {
+      "type": "string",
+      "enum": [
+        "at_most_once",
+        "at_least_once",
+        "effectively_once"
+      ]
+    },
+    "RepoBinding": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "entrypoint": {
+          "type": "string"
+        },
+        "package": {
+          "type": "string"
+        },
+        "profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "world": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "package",
+        "world",
+        "version",
+        "component",
+        "entrypoint"
+      ]
+    },
+    "RepoBindings": {
+      "type": "object",
+      "properties": {
+        "attestation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "billing": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "oci": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "policy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "reco": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "scan": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "search": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "signing": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        },
+        "source": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RepoBinding"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "RepoCapabilities": {
+      "type": "object",
+      "properties": {
+        "attestation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "billing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "oci": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "policy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reco": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "search": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "signing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "RepoPackKind": {
+      "type": "string",
+      "enum": [
+        "source-provider",
+        "scanner",
+        "signing",
+        "attestation",
+        "policy-engine",
+        "oci-provider",
+        "billing-provider",
+        "search-provider",
+        "recommendation-provider"
+      ]
+    },
+    "RepoPackSection": {
+      "type": "object",
+      "properties": {
+        "bindings": {
+          "$ref": "#/$defs/RepoBindings",
+          "default": {}
+        },
+        "capabilities": {
+          "$ref": "#/$defs/RepoCapabilities",
+          "default": {}
+        },
+        "kind": {
+          "$ref": "#/$defs/RepoPackKind"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "TransportKind": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "ComponentDescriptor": {
+      "type": "object",
+      "properties": {
+        "component_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "artifact_path": {
+          "type": "string"
+        },
+        "kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "artifact_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "platform": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "entrypoint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "artifact_path"
+      ],
+      "additionalProperties": false
+    },
+    "DistributionSection": {
+      "type": "object",
+      "properties": {
+        "bundle_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "tenant": {
+          "type": "object",
+          "default": {}
+        },
+        "environment_ref": {
+          "type": "string"
+        },
+        "desired_state_version": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ComponentDescriptor"
+          },
+          "default": []
+        },
+        "platform_components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ComponentDescriptor"
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "environment_ref",
+        "desired_state_version"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

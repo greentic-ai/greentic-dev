@@ -1,0 +1,13 @@
+{
+  "id": "not a reverse dns",
+  "name": "",
+  "version": "foo",
+  "world": "@@@",
+  "describe_export": "",
+  "artifacts": {
+    "component_wasm": "/absolute/path.wasm"
+  },
+  "hashes": {
+    "component_wasm": "sha256:deadbeef"
+  }
+}

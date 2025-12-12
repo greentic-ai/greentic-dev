@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::Path;
 
+use crate::cli::{ConfigCommand, ConfigSetArgs};
 use anyhow::{Context, Result, anyhow, bail};
-use greentic_dev::cli::{ConfigCommand, ConfigSetArgs};
 use toml_edit::{DocumentMut, Item, Table, value};
 
 use crate::config;

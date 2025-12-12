@@ -1,0 +1,59 @@
+{
+  "$schema": "https://greentic-ai.github.io/greentic-component/schemas/v1/component.manifest.schema.json",
+  "id": "{{ org }}.{{ name }}",
+  "name": "{{ name }}",
+  "version": "{{ version }}",
+  "world": "{{ wit_world }}",
+  "describe_export": "get-manifest",
+  "supports": ["messaging"],
+  "profiles": {
+    "default": "stateless",
+    "supported": ["stateless"]
+  },
+  "capabilities": {
+    "wasi": {
+      "filesystem": {
+        "mode": "none",
+        "mounts": []
+      },
+      "random": true,
+      "clocks": true
+    },
+    "host": {
+      "messaging": {
+        "inbound": true,
+        "outbound": true
+      },
+      "telemetry": {
+        "scope": "node"
+      },
+      "secrets": {
+        "required": []
+      }
+    }
+  },
+  "limits": {
+    "memory_mb": 128,
+    "wall_time_ms": 1000
+  },
+  "artifacts": {
+    "component_wasm": "target/wasm32-wasip2/release/{{ name_snake }}.wasm"
+  },
+  "hashes": {
+    "component_wasm": "blake3:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "dev_flows": {
+    "default": {
+      "format": "flow-ir-json",
+      "graph": {
+        "nodes": [
+          { "id": "start", "type": "start" },
+          { "id": "end", "type": "end" }
+        ],
+        "edges": [
+          { "from": "start", "to": "end" }
+        ]
+      }
+    }
+  }
+}

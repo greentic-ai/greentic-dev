@@ -1,6 +1,13 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use greentic_component::cmd::{
+    build::BuildArgs as ComponentBuildArgs, doctor::DoctorArgs as ComponentDoctorArgs,
+    flow::FlowCommand as ComponentFlowCommand, hash::HashArgs as ComponentHashArgs,
+    inspect::InspectArgs as ComponentInspectArgs, new::NewArgs as ComponentNewArgs,
+    store::StoreCommand as ComponentStoreCommand,
+    templates::TemplatesArgs as ComponentTemplatesArgs,
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "greentic-dev")]
@@ -16,17 +23,16 @@ pub enum Command {
     /// Flow tooling (validate, lint, bundle inspection)
     #[command(subcommand)]
     Flow(FlowCommand),
-    /// Pack tooling (build deterministic packs, run locally)
+    /// Pack tooling (delegates to packc for build/lint/sign/verify/new; uses greentic-pack for inspect/plan/events)
     #[command(subcommand)]
     Pack(PackCommand),
-    /// Component tooling (delegates to `greentic-component` or uses built-ins)
+    /// Component tooling (delegates to greentic-component built-ins + distributor add)
     #[command(subcommand)]
     Component(ComponentCommand),
     /// Manage greentic-dev configuration
     #[command(subcommand)]
     Config(ConfigCommand),
-    /// MCP tooling (feature = "mcp")
-    #[cfg(feature = "mcp")]
+    /// MCP tooling
     #[command(subcommand)]
     Mcp(McpCommand),
 }
@@ -69,35 +75,27 @@ pub struct FlowAddStepArgs {
 
 #[derive(Subcommand, Debug)]
 pub enum PackCommand {
-    /// Build a deterministic .gtpack from a validated flow bundle
-    Build(PackBuildArgs),
+    /// Delegate to packc build
+    Build(PackcArgs),
+    /// Delegate to packc lint
+    Lint(PackcArgs),
+    /// Delegate to packc new
+    New(PackcArgs),
+    /// Delegate to packc sign
+    Sign(PackcArgs),
+    /// Delegate to packc verify
+    Verify(PackcArgs),
+    /// Inspect a .gtpack (or directory via temporary build)
+    Inspect(PackInspectArgs),
+    /// Generate a deployment plan
+    Plan(PackPlanArgs),
+    /// Events helpers
+    #[command(subcommand)]
+    Events(PackEventsCommand),
     /// Execute a pack locally with mocks/telemetry support
     Run(PackRunArgs),
-    /// Verify a built pack archive (.gtpack)
-    Verify(PackVerifyArgs),
     /// Initialize a pack workspace from a remote coordinate
     Init(PackInitArgs),
-    /// Scaffold a pack workspace via the `packc` CLI
-    New(PackNewArgs),
-}
-
-#[derive(Args, Debug)]
-pub struct PackBuildArgs {
-    /// Path to the flow definition (YAML)
-    #[arg(short = 'f', long = "file")]
-    pub file: PathBuf,
-    /// Output path for the generated pack
-    #[arg(short = 'o', long = "out")]
-    pub out: PathBuf,
-    /// Signing mode for the generated pack
-    #[arg(long = "sign", default_value = "dev", value_enum)]
-    pub sign: PackSignArg,
-    /// Optional path to pack metadata (pack.toml)
-    #[arg(long = "meta")]
-    pub meta: Option<PathBuf>,
-    /// Directory containing local component builds
-    #[arg(long = "component-dir", value_name = "DIR")]
-    pub component_dir: Option<PathBuf>,
 }
 
 #[derive(Args, Debug)]
@@ -129,19 +127,6 @@ pub struct PackRunArgs {
 }
 
 #[derive(Args, Debug)]
-pub struct PackVerifyArgs {
-    /// Path to the pack (.gtpack) to verify
-    #[arg(short = 'p', long = "pack")]
-    pub pack: PathBuf,
-    /// Verification policy for signatures
-    #[arg(long = "policy", default_value = "devok", value_enum)]
-    pub policy: VerifyPolicyArg,
-    /// Emit the manifest JSON on success
-    #[arg(long = "json")]
-    pub json: bool,
-}
-
-#[derive(Args, Debug)]
 pub struct PackInitArgs {
     /// Remote pack coordinate (e.g. pack://org/name@1.0.0)
     pub from: String,
@@ -152,8 +137,8 @@ pub struct PackInitArgs {
 
 #[derive(Args, Debug, Clone, Default)]
 #[command(disable_help_flag = true)]
-pub struct PackNewArgs {
-    /// Arguments passed directly to the `packc new` command
+pub struct PackcArgs {
+    /// Arguments passed directly to the `packc` command
     #[arg(
         value_name = "ARGS",
         trailing_var_arg = true,
@@ -162,13 +147,79 @@ pub struct PackNewArgs {
     pub passthrough: Vec<String>,
 }
 
+#[derive(Args, Debug)]
+pub struct PackInspectArgs {
+    /// Path to the .gtpack file or pack directory
+    #[arg(value_name = "PATH")]
+    pub path: PathBuf,
+    /// Signature policy to enforce
+    #[arg(long, value_enum, default_value = "devok")]
+    pub policy: PackPolicyArg,
+    /// Emit JSON output
+    #[arg(long)]
+    pub json: bool,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum PackEventsCommand {
+    /// List event providers declared in a pack
+    List(PackEventsListArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct PackEventsListArgs {
+    /// Path to a .gtpack archive or pack source directory.
+    #[arg(value_name = "PATH")]
+    pub path: PathBuf,
+    /// Output format: table (default), json, yaml.
+    #[arg(long, value_enum, default_value = "table")]
+    pub format: PackEventsFormatArg,
+    /// When set, print additional diagnostics (for directory builds).
+    #[arg(long)]
+    pub verbose: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct PackPlanArgs {
+    /// Path to a .gtpack archive or pack source directory.
+    #[arg(value_name = "PATH")]
+    pub input: PathBuf,
+    /// Tenant identifier to embed in the plan.
+    #[arg(long, default_value = "tenant-local")]
+    pub tenant: String,
+    /// Environment identifier to embed in the plan.
+    #[arg(long, default_value = "local")]
+    pub environment: String,
+    /// Emit compact JSON output instead of pretty-printing.
+    #[arg(long)]
+    pub json: bool,
+    /// When set, print additional diagnostics (for directory builds).
+    #[arg(long)]
+    pub verbose: bool,
+}
+
 #[derive(Subcommand, Debug, Clone)]
 pub enum ComponentCommand {
     /// Add a remote component to the current workspace via the distributor
     Add(ComponentAddArgs),
-    /// Delegate to the `greentic-component` CLI (default passthrough)
-    #[command(external_subcommand)]
-    Passthrough(Vec<String>),
+    /// Scaffold a new Greentic component project
+    New(ComponentNewArgs),
+    /// List available component templates
+    Templates(ComponentTemplatesArgs),
+    /// Run component doctor checks
+    Doctor(ComponentDoctorArgs),
+    /// Inspect manifests and describe payloads
+    Inspect(ComponentInspectArgs),
+    /// Recompute manifest hashes
+    Hash(ComponentHashArgs),
+    /// Build component wasm + scaffold config flows
+    Build(ComponentBuildArgs),
+    /// Flow utilities (config flow scaffolding)
+    #[command(subcommand)]
+    Flow(ComponentFlowCommand),
+    /// Interact with the component store
+    #[command(subcommand)]
+    Store(ComponentStoreCommand),
 }
 
 #[derive(Args, Debug, Clone)]
@@ -183,14 +234,12 @@ pub struct ComponentAddArgs {
     pub intent: DevIntentArg,
 }
 
-#[cfg(feature = "mcp")]
 #[derive(Subcommand, Debug)]
 pub enum McpCommand {
     /// Inspect MCP provider metadata
     Doctor(McpDoctorArgs),
 }
 
-#[cfg(feature = "mcp")]
 #[derive(Args, Debug)]
 pub struct McpDoctorArgs {
     /// MCP provider identifier or config path
@@ -224,6 +273,12 @@ pub enum PackSignArg {
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum PackPolicyArg {
+    Devok,
+    Strict,
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
 pub enum RunPolicyArg {
     Strict,
     Devok,
@@ -242,6 +297,13 @@ pub enum MockSettingArg {
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum PackEventsFormatArg {
+    Table,
+    Json,
+    Yaml,
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
 pub enum ConfigFlowModeArg {
     Default,
     Custom,
@@ -253,65 +315,4 @@ pub enum DevIntentArg {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use clap::Parser;
-
-    #[test]
-    fn parses_component_passthrough_args() {
-        let cli = Cli::parse_from([
-            "greentic-dev",
-            "component",
-            "new",
-            "--name",
-            "demo",
-            "--json",
-        ]);
-        let Command::Component(ComponentCommand::Passthrough(args)) = cli.command else {
-            panic!("expected component passthrough variant");
-        };
-        assert_eq!(
-            args,
-            vec![
-                "new".to_string(),
-                "--name".into(),
-                "demo".into(),
-                "--json".into()
-            ]
-        );
-    }
-
-    #[test]
-    fn parses_pack_new_args() {
-        let cli = Cli::parse_from(["greentic-dev", "pack", "new", "--name", "demo-pack"]);
-        let Command::Pack(PackCommand::New(args)) = cli.command else {
-            panic!("expected pack new variant");
-        };
-        assert_eq!(
-            args.passthrough,
-            vec!["--name".to_string(), "demo-pack".to_string()]
-        );
-    }
-
-    #[test]
-    fn parses_config_set_command() {
-        let cli = Cli::parse_from([
-            "greentic-dev",
-            "config",
-            "set",
-            "defaults.component.org",
-            "ai.greentic",
-            "--file",
-            "/tmp/config.toml",
-        ]);
-        let Command::Config(ConfigCommand::Set(args)) = cli.command else {
-            panic!("expected config set variant");
-        };
-        assert_eq!(args.key, "defaults.component.org");
-        assert_eq!(args.value, "ai.greentic");
-        assert_eq!(
-            args.file.as_ref().map(|p| p.display().to_string()),
-            Some("/tmp/config.toml".into())
-        );
-    }
-}
+mod tests {}

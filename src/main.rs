@@ -1,29 +1,22 @@
-mod cmd;
-mod component_resolver;
-mod config;
-mod delegate;
-#[cfg(feature = "mcp")]
-mod mcp_cmd;
-mod pack_build;
-mod pack_run;
-mod pack_verify;
-mod path_safety;
-mod util;
-
 use anyhow::Result;
 use clap::Parser;
-#[cfg(feature = "mcp")]
 use greentic_dev::cli::McpCommand;
 use greentic_dev::cli::{
     Cli, Command, ComponentCommand, DevIntentArg, FlowCommand, MockSettingArg, PackCommand,
-    PackSignArg, RunPolicyArg, VerifyPolicyArg,
+    PackEventsCommand, RunPolicyArg,
 };
 use greentic_dev::flow_cmd;
-use greentic_dev::pack_init::{PackInitIntent, run as pack_init_run, run_component_add};
+use greentic_dev::pack_init::{PackInitIntent, run as pack_init_run};
 
-use crate::pack_build::PackSigning;
-use crate::pack_run::{MockSetting, RunPolicy};
-use crate::pack_verify::VerifyPolicy;
+use greentic_component::cmd::{build, doctor, flow, hash, inspect, new, store, templates};
+use greentic_component::scaffold::engine::ScaffoldEngine;
+use greentic_dev::cmd;
+use greentic_dev::component_add::run_component_add;
+use greentic_dev::mcp_cmd;
+use greentic_dev::pack_cli;
+use greentic_dev::pack_cli::{pack_inspect, pack_plan};
+use greentic_dev::pack_run::{self, MockSetting, RunPolicy};
+use packc::cli as packc_cli;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -34,13 +27,16 @@ fn main() -> Result<()> {
             FlowCommand::AddStep(args) => flow_cmd::run_add_step(args),
         },
         Command::Pack(pack) => match pack {
-            PackCommand::Build(args) => pack_build::run(
-                &args.file,
-                &args.out,
-                args.sign.into(),
-                args.meta.as_deref(),
-                args.component_dir.as_deref(),
-            ),
+            PackCommand::Build(args) => packc("build", &args.passthrough),
+            PackCommand::Lint(args) => packc("lint", &args.passthrough),
+            PackCommand::New(args) => packc("new", &args.passthrough),
+            PackCommand::Sign(args) => packc("sign", &args.passthrough),
+            PackCommand::Verify(args) => packc("verify", &args.passthrough),
+            PackCommand::Inspect(args) => pack_inspect(&args.path, args.policy, args.json),
+            PackCommand::Plan(args) => pack_plan(&args),
+            PackCommand::Events(evt) => match evt {
+                PackEventsCommand::List(args) => pack_cli::pack_events_list(&args),
+            },
             PackCommand::Run(args) => {
                 let allow_hosts = args
                     .allow
@@ -51,18 +47,14 @@ fn main() -> Result<()> {
                     pack_path: &args.pack,
                     entry: args.entry,
                     input: args.input,
-                    policy: args.policy.into(),
+                    policy: run_policy_from_arg(args.policy),
                     otlp: args.otlp,
                     allow_hosts,
-                    mocks: args.mocks.into(),
+                    mocks: mock_setting_from_arg(args.mocks),
                     artifacts_dir: args.artifacts.as_deref(),
                 })
             }
-            PackCommand::Verify(args) => {
-                pack_verify::run(&args.pack, args.policy.into(), args.json)
-            }
             PackCommand::Init(args) => pack_init_run(&args.from, args.profile.as_deref()),
-            PackCommand::New(args) => cmd::pack::run_new(&args),
         },
         Command::Component(component) => match component {
             ComponentCommand::Add(args) => {
@@ -76,49 +68,35 @@ fn main() -> Result<()> {
                 )?;
                 Ok(())
             }
-            ComponentCommand::Passthrough(args) => cmd::component::run_passthrough(&args),
+            ComponentCommand::New(args) => {
+                let engine = ScaffoldEngine::new();
+                new::run(args, &engine)
+            }
+            ComponentCommand::Templates(args) => {
+                let engine = ScaffoldEngine::new();
+                templates::run(args, &engine)
+            }
+            ComponentCommand::Doctor(args) => doctor::run(args).map_err(Into::into),
+            ComponentCommand::Inspect(args) => {
+                let result = inspect::run(&args)?;
+                inspect::emit_warnings(&result.warnings);
+                if args.strict && !result.warnings.is_empty() {
+                    anyhow::bail!(
+                        "component-inspect: {} warning(s) treated as errors (--strict)",
+                        result.warnings.len()
+                    );
+                }
+                Ok(())
+            }
+            ComponentCommand::Hash(args) => hash::run(args),
+            ComponentCommand::Build(args) => build::run(args),
+            ComponentCommand::Flow(flow) => flow::run(flow),
+            ComponentCommand::Store(store) => store::run(store),
         },
         Command::Config(config_cmd) => cmd::config::run(config_cmd),
-        #[cfg(feature = "mcp")]
         Command::Mcp(mcp) => match mcp {
             McpCommand::Doctor(args) => mcp_cmd::doctor(&args.provider, args.json),
         },
-    }
-}
-
-impl From<PackSignArg> for PackSigning {
-    fn from(value: PackSignArg) -> Self {
-        match value {
-            PackSignArg::Dev => PackSigning::Dev,
-            PackSignArg::None => PackSigning::None,
-        }
-    }
-}
-
-impl From<RunPolicyArg> for RunPolicy {
-    fn from(value: RunPolicyArg) -> Self {
-        match value {
-            RunPolicyArg::Strict => RunPolicy::Strict,
-            RunPolicyArg::Devok => RunPolicy::DevOk,
-        }
-    }
-}
-
-impl From<MockSettingArg> for MockSetting {
-    fn from(value: MockSettingArg) -> Self {
-        match value {
-            MockSettingArg::On => MockSetting::On,
-            MockSettingArg::Off => MockSetting::Off,
-        }
-    }
-}
-
-impl From<VerifyPolicyArg> for VerifyPolicy {
-    fn from(value: VerifyPolicyArg) -> Self {
-        match value {
-            VerifyPolicyArg::Strict => VerifyPolicy::Strict,
-            VerifyPolicyArg::Devok => VerifyPolicy::DevOk,
-        }
     }
 }
 
@@ -133,4 +111,28 @@ fn split_allow_list(value: &str) -> Result<Vec<String>> {
         anyhow::bail!("--allow expects at least one host when provided");
     }
     Ok(hosts)
+}
+
+fn packc(subcommand: &str, args: &[String]) -> Result<()> {
+    let mut argv = Vec::with_capacity(args.len() + 2);
+    argv.push("packc".to_string());
+    argv.push(subcommand.to_string());
+    argv.extend(args.iter().cloned());
+    let cli = packc_cli::Cli::parse_from(argv);
+    packc_cli::run_with_cli(cli)?;
+    Ok(())
+}
+
+fn run_policy_from_arg(arg: RunPolicyArg) -> RunPolicy {
+    match arg {
+        RunPolicyArg::Strict => RunPolicy::Strict,
+        RunPolicyArg::Devok => RunPolicy::DevOk,
+    }
+}
+
+fn mock_setting_from_arg(arg: MockSettingArg) -> MockSetting {
+    match arg {
+        MockSettingArg::On => MockSetting::On,
+        MockSettingArg::Off => MockSetting::Off,
+    }
 }

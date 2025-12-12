@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "{{ name }} component configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "echo_prefix": {
+      "type": "string",
+      "description": "Prefix prepended to every handle response",
+      "default": "{{ name }}",
+      "x-default-applied": true
+    }
+  }
+}

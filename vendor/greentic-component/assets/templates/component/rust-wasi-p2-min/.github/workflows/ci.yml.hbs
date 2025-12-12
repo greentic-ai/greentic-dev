@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+      - name: Cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Cargo test
+        run: cargo test --workspace --all-targets
+      - name: Cargo check (wasm32-wasip2)
+        run: cargo check --target wasm32-wasip2

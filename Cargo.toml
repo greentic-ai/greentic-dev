@@ -1,6 +1,6 @@
 [package]
 name = "greentic-dev"
-version = "0.4.15"
+version = "0.4.16"
 edition = "2024"
 description = "Developer CLI and local tooling for Greentic flows, packs, and components"
 license = "MIT OR Apache-2.0"
@@ -25,10 +25,6 @@ include = [
 members = ["crates/dev-viewer", "xtask"]
 resolver = "2"
 
-[features]
-default = []
-mcp = ["greentic-mcp", "greentic-interfaces/runner-host-v1"]
-
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
@@ -49,8 +45,9 @@ greentic-types = { version = "0.4", features = ["serde"] }
 greentic-flow = "0.4"
 greentic-pack = "0.4"
 greentic-runner = "0.4"
-greentic-component = { version = "0.4", features = ["prepare", "describe"] }
-greentic-mcp = { version = "0.4", optional = true }
+packc = "0.4"
+greentic-component = { version = "0.4", features = ["prepare", "describe", "cli"] }
+greentic-mcp = { version = "0.4" }
 jsonschema = "0.37"
 tempfile = "3"
 dirs = "6"
@@ -60,8 +57,10 @@ zip = { version = "0.6", default-features = false, features = ["deflate"] }
 bytes = "1.7"
 async-compression = "0.4"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
-greentic-distributor-client = "0.4"
+greentic-distributor-client = { version = "0.4", features = ["http-runtime"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
+[patch.crates-io]
 [workspace.metadata.dist]
 cargo-dist-version = "0.24.1"
 ci = ["github"]

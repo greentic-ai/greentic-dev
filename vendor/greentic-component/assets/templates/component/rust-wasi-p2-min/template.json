@@ -1,0 +1,6 @@
+{
+  "id": "rust-wasi-p2-min",
+  "description": "Minimal Rust + WASI-P2 component starter",
+  "tags": ["rust", "wasi-p2", "component"],
+  "executables": []
+}

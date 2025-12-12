@@ -1,0 +1,26 @@
+[package]
+name = "{{ name }}"
+version = "{{ version }}"
+edition = "2024"
+license = "{{ license }}"
+rust-version = "1.89"
+description = "Greentic component {{ name }}"
+repository = "https://github.com/{{ repo }}"
+{{#if author}}
+authors = ["{{ author }}"]
+{{else}}
+authors = ["Greentic Labs"]
+{{/if}}
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde_json = "1"
+greentic-types = { {{ greentic_types_dep }} }
+
+[dev-dependencies]
+serde_json = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+greentic-interfaces-guest = { {{ greentic_interfaces_guest_dep }}, default-features = false, features = ["component-node"] }

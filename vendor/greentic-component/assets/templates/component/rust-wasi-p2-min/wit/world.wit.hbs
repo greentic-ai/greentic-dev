@@ -1,0 +1,20 @@
+package {{ org }}:{{ name_snake }};
+
+/// Component surface and configuration.
+world component {
+    import component: interface {
+        /// Configuration for this component.
+        @config
+        record config {
+            /// Title shown to users.
+            title: string,
+            /// Optional prefix to include.
+            prefix: option<string>,
+            /// Maximum items to include.
+            /// @default(10)
+            max-items: u32,
+            /// @flow:hidden
+            internal-flag: bool,
+        }
+    }
+}
