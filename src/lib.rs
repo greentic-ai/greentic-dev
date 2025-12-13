@@ -16,6 +16,7 @@ pub mod pack_run;
 pub mod pack_temp;
 pub mod pack_verify;
 pub mod path_safety;
+pub mod tests_exec;
 pub mod util;
 
 pub mod registry {

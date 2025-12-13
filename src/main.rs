@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use greentic_dev::cli::McpCommand;
 use greentic_dev::cli::{
@@ -52,6 +52,21 @@ fn main() -> Result<()> {
                     allow_hosts,
                     mocks: mock_setting_from_arg(args.mocks),
                     artifacts_dir: args.artifacts.as_deref(),
+                    json: args.json,
+                    offline: args.offline,
+                    mock_exec: args.mock_exec,
+                    allow_external: args.allow_external,
+                    mock_external: args.mock_external,
+                    mock_external_payload: args
+                        .mock_external_payload
+                        .as_ref()
+                        .map(|p| -> anyhow::Result<_> {
+                            let data = std::fs::read_to_string(p)
+                                .with_context(|| format!("failed to read {}", p.display()))?;
+                            serde_json::from_str(&data).context("invalid mock external JSON")
+                        })
+                        .transpose()?,
+                    secrets_env_prefix: args.secrets_env_prefix.clone(),
                 })
             }
             PackCommand::Init(args) => pack_init_run(&args.from, args.profile.as_deref()),

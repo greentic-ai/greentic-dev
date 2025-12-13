@@ -5,8 +5,12 @@ use greentic_dev::cli::{ConfigFlowModeArg, FlowAddStepArgs};
 use greentic_dev::flow_cmd::parse_config_flow_output;
 use greentic_dev::flow_cmd::run_add_step;
 use serde_json::json;
+use serde_yaml_bw as serde_yaml;
+use std::sync::Mutex;
 
-fn write_test_flow(root: &Path) {
+static WORKDIR_LOCK: Mutex<()> = Mutex::new(());
+
+fn write_test_manifest(root: &Path) {
     let manifest = json!({
         "id": "dev.test",
         "name": "Dev Test",
@@ -20,11 +24,16 @@ fn write_test_flow(root: &Path) {
         "hashes": { "component_wasm": "blake3:0" },
         "config_schema": {},
         "dev_flows": {
-            "demo": {
+            "default": {
                 "format": "flow-ir-json",
                 "graph": {
+                    "schema_version": 1,
+                    "id": "component.default",
+                    "type": "component-config",
                     "nodes": {
-                        "start": { "routing": [] }
+                        "emit_config": {
+                            "template": "{ \"node_id\": \"qa_step\", \"node\": { \"qa\": { \"component\": \"component-qa-process\", \"question\": \"hi\" }, \"routing\": [{ \"to\": \"NEXT_NODE_PLACEHOLDER\" }] } }"
+                        }
                     },
                     "edges": []
                 }
@@ -36,6 +45,23 @@ fn write_test_flow(root: &Path) {
         serde_json::to_string_pretty(&manifest).unwrap(),
     )
     .unwrap();
+}
+
+fn write_pack_flow(root: &Path) -> PathBuf {
+    let flows = root.join("flows");
+    fs::create_dir_all(&flows).unwrap();
+    let flow = "schema_version: 1
+id: pack.demo
+type: pack
+nodes:
+  start:
+    routing:
+      - to: end
+  end: {}
+";
+    let path = flows.join("demo.ygtc");
+    fs::write(&path, flow).unwrap();
+    path
 }
 
 #[test]
@@ -79,9 +105,12 @@ nodes:
 fn flow_add_step_inserts_node() {
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().to_path_buf();
-    write_test_flow(&root);
+    write_test_manifest(&root);
     let bundle = write_component_bundle(&root);
+    write_pack_flow(&root);
 
+    let _guard = WORKDIR_LOCK.lock().unwrap();
+    let prev_dir = std::env::current_dir().unwrap();
     std::env::set_current_dir(&root).unwrap();
 
     run_add_step(FlowAddStepArgs {
@@ -94,31 +123,111 @@ fn flow_add_step_inserts_node() {
         manifest: None,
     })
     .unwrap();
+    std::env::set_current_dir(prev_dir).unwrap();
 
-    let updated = fs::read_to_string(root.join("component.manifest.json")).unwrap();
-    let doc: serde_json::Value = serde_json::from_str(&updated).unwrap();
+    let updated = fs::read_to_string(root.join("flows/demo.ygtc")).unwrap();
+    let doc: serde_yaml::Value = serde_yaml::from_str(&updated).unwrap();
     let nodes = doc
-        .get("dev_flows")
-        .and_then(|f| f.get("demo"))
-        .and_then(|f| f.get("graph"))
-        .and_then(|f| f.get("nodes"))
-        .and_then(|n| n.as_object())
+        .get(serde_yaml::Value::String("nodes".to_string(), None))
+        .and_then(|n| n.as_mapping())
         .expect("nodes map");
     assert!(
-        nodes.contains_key("qa_step"),
-        "expected new node to be inserted"
+        nodes
+            .get(&serde_yaml::Value::String("qa_step".to_string(), None))
+            .is_some()
     );
     let routing = nodes
-        .get("start")
-        .and_then(|node| node.get("routing"))
-        .and_then(|r| r.as_array())
+        .get(&serde_yaml::Value::String("start".to_string(), None))
+        .and_then(|node| {
+            node.as_mapping()
+                .and_then(|m| m.get(&serde_yaml::Value::String("routing".to_string(), None)))
+        })
+        .and_then(|r| r.as_sequence())
         .expect("routing array");
     assert!(
         routing.iter().any(|entry| entry
-            .get("to")
+            .as_mapping()
+            .and_then(|m| m.get(&serde_yaml::Value::String("to".to_string(), None)))
             .and_then(|v| v.as_str())
             .map(|s| s == "qa_step")
             .unwrap_or(false)),
         "expected routing to include qa_step"
+    );
+}
+
+#[test]
+fn flow_add_step_errors_when_config_flow_missing() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().to_path_buf();
+    let manifest = json!({
+        "id": "dev.test",
+        "name": "Dev Test",
+        "version": "0.1.0",
+        "world": "greentic:component/component@0.4.0",
+        "describe_export": "get-manifest",
+        "supports": ["messaging"],
+        "profiles": { "default": "dev", "supported": ["dev"] },
+        "capabilities": { "wasi": {}, "host": {} },
+        "artifacts": { "component_wasm": "component.wasm" },
+        "hashes": { "component_wasm": "blake3:0" },
+        "config_schema": {}
+    });
+    fs::write(
+        root.join("component.manifest.json"),
+        serde_json::to_string_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+    let manifest_struct: greentic_types::component::ComponentManifest =
+        serde_json::from_value(manifest).unwrap();
+    assert!(
+        manifest_struct.dev_flows.is_empty(),
+        "expected manifest to lack dev_flows for error test"
+    );
+    write_pack_flow(&root);
+
+    let _guard = WORKDIR_LOCK.lock().unwrap();
+    let prev_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let err = run_add_step(FlowAddStepArgs {
+        flow_id: "demo".into(),
+        coordinate: Some(root.to_string_lossy().to_string()),
+        profile: None,
+        mode: None,
+        after: Some("start".into()),
+        flow: "default".into(),
+        manifest: None,
+    })
+    .expect_err("expected missing config flow error");
+    std::env::set_current_dir(prev_dir).unwrap();
+    assert!(
+        err.to_string().contains("Flow 'default' is missing"),
+        "unexpected error: {err}"
+    );
+}
+
+#[test]
+fn flow_add_step_errors_when_pack_flow_missing() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().to_path_buf();
+    write_test_manifest(&root);
+    let bundle = write_component_bundle(&root);
+
+    let _guard = WORKDIR_LOCK.lock().unwrap();
+    let prev_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let err = run_add_step(FlowAddStepArgs {
+        flow_id: "missing".into(),
+        coordinate: Some(bundle.to_string_lossy().to_string()),
+        profile: None,
+        mode: None,
+        after: None,
+        flow: "default".into(),
+        manifest: None,
+    })
+    .expect_err("expected missing pack flow error");
+    std::env::set_current_dir(prev_dir).unwrap();
+    assert!(
+        err.to_string().contains("Pack flow 'missing'"),
+        "unexpected error: {err}"
     );
 }

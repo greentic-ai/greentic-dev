@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::cli::{ConfigFlowModeArg, FlowAddStepArgs};
 use crate::component_add::run_component_add;
@@ -8,11 +8,13 @@ use crate::path_safety::normalize_under_root;
 use anyhow::{Context, Result, anyhow, bail};
 use greentic_flow::flow_bundle::load_and_validate_bundle;
 use serde_json::Value as JsonValue;
+use serde_yaml_bw as serde_yaml;
 use std::io::Write;
-use std::path::PathBuf;
 use std::str::FromStr;
 use std::{io, io::IsTerminal};
+use tempfile::NamedTempFile;
 
+use greentic_types::FlowId;
 use greentic_types::component::ComponentManifest;
 
 pub fn validate(path: &Path, compact_json: bool) -> Result<()> {
@@ -60,102 +62,78 @@ pub fn run_add_step(args: FlowAddStepArgs) -> Result<()> {
             manifest_path.display()
         )
     })?;
-    let mut manifest_json: JsonValue = serde_json::from_str(&manifest_raw).with_context(|| {
-        format!(
-            "failed to parse manifest JSON at {}",
-            manifest_path.display()
-        )
-    })?;
-    let flow_id = if args.flow == "default" {
-        args.flow_id.clone()
-    } else {
-        args.flow.clone()
+
+    let config_flow_id = match args.mode {
+        Some(ConfigFlowModeArg::Custom) => "custom".to_string(),
+        Some(ConfigFlowModeArg::Default) => "default".to_string(),
+        None => args.flow.clone(),
     };
-    let flow_key = flow_id.parse().map_err(|_| {
+    let config_flow_key = FlowId::from_str(&config_flow_id).map_err(|_| {
         anyhow!(
             "invalid flow identifier `{}`; flow ids must be valid FlowId strings",
-            flow_id
+            config_flow_id
         )
     })?;
-    let Some(snapshot_graph) = manifest
-        .dev_flows
-        .get(&flow_key)
-        .and_then(|flow| flow.graph.as_object().cloned())
-    else {
+    let Some(config_flow) = manifest.dev_flows.get(&config_flow_key) else {
         bail!(
-            "Flow `{}` is missing from manifest.dev_flows. Run `greentic-component flow update` to regenerate config flows.",
-            flow_id
+            "Flow '{}' is missing from manifest.dev_flows. Run `greentic-component flow update` to regenerate config flows.",
+            config_flow_id
         );
     };
-
-    let flow_entry = manifest_json
-        .get_mut("dev_flows")
-        .and_then(|flows| flows.as_object_mut())
-        .and_then(|flows| flows.get_mut(&flow_id))
-        .ok_or_else(|| anyhow!("flow `{}` is missing from manifest.dev_flows", flow_id))?;
-    let graph_value = flow_entry
-        .as_object_mut()
-        .and_then(|obj| obj.get_mut("graph"))
-        .ok_or_else(|| anyhow!("flow `{}` missing graph object", flow_id))?;
-    let graph_obj = graph_value
-        .as_object_mut()
-        .ok_or_else(|| anyhow!("flow `{}` graph is not an object", flow_id))?;
+    if !config_flow.graph.is_object() {
+        bail!("config flow `{config_flow_id}` graph is not an object");
+    }
 
     let coord = args
         .coordinate
         .ok_or_else(|| anyhow!("component coordinate is required (pass --coordinate)"))?;
 
-    // Fetch or use local component bundle
-    let bundle_dir = resolve_component_bundle(&coord, args.profile.as_deref())?;
-    let flows_dir = bundle_dir.join("flows");
-    let custom_flow = flows_dir.join("custom.ygtc");
-    let default_flow = flows_dir.join("default.ygtc");
-    let selected = match args.mode {
-        Some(ConfigFlowModeArg::Custom) => {
-            if custom_flow.exists() {
-                custom_flow
-            } else {
-                default_flow.clone()
-            }
-        }
-        Some(ConfigFlowModeArg::Default) => {
-            if default_flow.exists() {
-                default_flow
-            } else {
-                custom_flow.clone()
-            }
-        }
-        None => {
-            if default_flow.exists() {
-                default_flow
-            } else if custom_flow.exists() {
-                custom_flow
-            } else {
-                bail!("component bundle does not provide flows/default.ygtc or flows/custom.ygtc")
-            }
-        }
-    };
-    if !selected.exists() {
-        bail!("selected config flow missing at {}", selected.display());
-    }
+    // Ensure the component is available locally (fetch if needed).
+    let _bundle_dir = resolve_component_bundle(&coord, args.profile.as_deref())?;
 
-    let output = crate::pack_run::run_config_flow(&selected)
-        .with_context(|| format!("failed to run config flow {}", selected.display()))?;
+    // Render the dev flow graph to YAML so the existing runner can consume it.
+    let config_flow_yaml = serde_yaml::to_string(&config_flow.graph)
+        .context("failed to render config flow graph to YAML")?;
+    let mut temp_flow =
+        NamedTempFile::new().context("failed to create temporary config flow file")?;
+    temp_flow
+        .write_all(config_flow_yaml.as_bytes())
+        .context("failed to write temporary config flow")?;
+    temp_flow.flush()?;
+
+    let pack_flow_path = PathBuf::from("flows").join(format!("{}.ygtc", args.flow_id));
+    if !pack_flow_path.exists() {
+        bail!(
+            "Pack flow '{}' not found at {}",
+            args.flow_id,
+            pack_flow_path.display()
+        );
+    }
+    let pack_flow_raw = std::fs::read_to_string(&pack_flow_path)
+        .with_context(|| format!("failed to read pack flow {}", pack_flow_path.display()))?;
+    let mut pack_flow_json: JsonValue = serde_yaml::from_str(&pack_flow_raw)
+        .with_context(|| format!("invalid YAML in {}", pack_flow_path.display()))?;
+
+    let output = crate::pack_run::run_config_flow(temp_flow.path())
+        .with_context(|| format!("failed to run config flow {}", config_flow_id))?;
     let (node_id, mut node) = parse_config_flow_output(&output)?;
-    let graph_snapshot = JsonValue::Object(snapshot_graph.clone());
     let after = args
         .after
         .clone()
-        .or_else(|| prompt_routing_target(&graph_snapshot));
+        .or_else(|| prompt_routing_target(&pack_flow_json));
     if let Some(after) = after.as_deref() {
         patch_placeholder_routing(&mut node, after);
     }
 
-    // Update target flow JSON
+    let graph_obj = pack_flow_json
+        .as_object_mut()
+        .ok_or_else(|| anyhow!("pack flow {} is not a mapping", pack_flow_path.display()))?;
+
+    // Update target pack flow JSON
     let nodes = graph_obj
         .get_mut("nodes")
         .and_then(|n| n.as_object_mut())
-        .ok_or_else(|| anyhow!("flow `{}` missing nodes map", flow_id))?;
+        .ok_or_else(|| anyhow!("flow `{}` missing nodes map", args.flow_id))?;
     nodes.insert(node_id.clone(), node);
 
     if let Some(after) = args.after {
@@ -164,16 +142,16 @@ pub fn run_add_step(args: FlowAddStepArgs) -> Result<()> {
         append_routing(graph_obj, after, &node_id)?;
     }
 
-    let rendered = serde_json::to_string_pretty(&manifest_json)
-        .context("failed to render updated manifest")?;
-    std::fs::write(&manifest_path, rendered)
-        .with_context(|| format!("failed to write {}", manifest_path.display()))?;
+    let rendered =
+        serde_yaml::to_string(&pack_flow_json).context("failed to render updated pack flow")?;
+    std::fs::write(&pack_flow_path, rendered)
+        .with_context(|| format!("failed to write {}", pack_flow_path.display()))?;
 
     println!(
         "Added node `{}` from config flow {} to {}",
         node_id,
-        selected.file_name().unwrap_or_default().to_string_lossy(),
-        manifest_path.display()
+        config_flow_id,
+        pack_flow_path.display()
     );
     Ok(())
 }

@@ -1,0 +1,130 @@
+use std::io::Write;
+use std::str::FromStr;
+
+use anyhow::Result;
+use greentic_types::flow::{
+    ComponentRef, Flow, FlowHasher, FlowKind, FlowMetadata, InputMapping, Node, OutputMapping,
+    Routing,
+};
+use greentic_types::{ComponentId, FlowId, NodeId, PackFlowEntry, PackId, PackKind, PackManifest};
+use semver::Version;
+use serde_json::json;
+use zip::ZipWriter;
+use zip::write::SimpleFileOptions;
+
+pub fn build_l3_pack() -> Result<Vec<u8>> {
+    let flow = build_flow()?;
+    let manifest = PackManifest {
+        schema_version: "1".to_string(),
+        pack_id: PackId::from_str("dev.local.l3")?,
+        version: Version::parse("0.1.0")?,
+        kind: PackKind::Application,
+        publisher: "test".into(),
+        components: Vec::new(),
+        flows: vec![PackFlowEntry {
+            id: flow.id.clone(),
+            kind: flow.kind,
+            flow,
+            tags: Vec::new(),
+            entrypoints: Vec::new(),
+        }],
+        dependencies: Vec::new(),
+        capabilities: Vec::new(),
+        signatures: Default::default(),
+    };
+    let manifest_bytes = greentic_types::encode_pack_manifest(&manifest)?;
+
+    let mut buf = Vec::new();
+    {
+        let mut writer = ZipWriter::new(std::io::Cursor::new(&mut buf));
+        let opts = SimpleFileOptions::default();
+        writer.start_file("manifest.cbor", opts)?;
+        writer.write_all(&manifest_bytes)?;
+        writer.start_file("components/tool.wasm", opts)?;
+        writer.write_all(&[0u8; 8])?;
+        writer.start_file("components/template.wasm", opts)?;
+        writer.write_all(&[0u8; 8])?;
+        writer.finish()?;
+    }
+    Ok(buf)
+}
+
+fn build_flow() -> Result<Flow> {
+    let start_id: NodeId = "start".parse()?;
+    let tool_id: NodeId = "tool".parse()?;
+    let tmpl_id: NodeId = "template".parse()?;
+    let err_id: NodeId = "err".parse()?;
+
+    let start = Node {
+        id: start_id.clone(),
+        component: ComponentRef {
+            id: ComponentId::from_str("component.start")?,
+            pack_alias: None,
+            operation: None,
+        },
+        input: InputMapping { mapping: json!({}) },
+        output: OutputMapping { mapping: json!({}) },
+        routing: Routing::Next {
+            node_id: tool_id.clone(),
+        },
+        telemetry: Default::default(),
+    };
+    let tool = Node {
+        id: tool_id.clone(),
+        component: ComponentRef {
+            id: ComponentId::from_str("component.tool.fixed")?,
+            pack_alias: None,
+            operation: None,
+        },
+        input: InputMapping {
+            mapping: json!({ "mode": "fixed" }),
+        },
+        output: OutputMapping { mapping: json!({}) },
+        routing: Routing::Branch {
+            on_status: [("error".to_string(), err_id.clone())]
+                .into_iter()
+                .collect(),
+            default: Some(tmpl_id.clone()),
+        },
+        telemetry: Default::default(),
+    };
+    let tmpl = Node {
+        id: tmpl_id.clone(),
+        component: ComponentRef {
+            id: ComponentId::from_str("component.template")?,
+            pack_alias: None,
+            operation: None,
+        },
+        input: InputMapping { mapping: json!({}) },
+        output: OutputMapping { mapping: json!({}) },
+        routing: Routing::End,
+        telemetry: Default::default(),
+    };
+    let err = Node {
+        id: err_id.clone(),
+        component: ComponentRef {
+            id: ComponentId::from_str("component.error.map")?,
+            pack_alias: None,
+            operation: None,
+        },
+        input: InputMapping { mapping: json!({}) },
+        output: OutputMapping { mapping: json!({}) },
+        routing: Routing::End,
+        telemetry: Default::default(),
+    };
+
+    let mut nodes: indexmap::IndexMap<NodeId, Node, FlowHasher> = indexmap::IndexMap::default();
+    nodes.insert(start_id, start);
+    nodes.insert(tool_id, tool);
+    nodes.insert(tmpl_id, tmpl);
+    nodes.insert(err_id, err);
+
+    Ok(Flow {
+        schema_version: "1".into(),
+        id: FlowId::from_str("default")?,
+        kind: FlowKind::ComponentConfig,
+        entrypoints: Default::default(),
+        nodes,
+        metadata: FlowMetadata::default(),
+    })
+}

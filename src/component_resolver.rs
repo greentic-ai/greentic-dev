@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -232,8 +233,8 @@ fn parse_version_req(input: &str) -> Result<VersionReq> {
 }
 
 fn to_resolved_component(prepared: PreparedComponent) -> Result<ResolvedComponent> {
-    let manifest_json =
-        serde_json::to_string(&prepared.manifest).context("failed to serialize manifest")?;
+    let manifest_json = fs::read_to_string(&prepared.manifest_path)
+        .with_context(|| format!("failed to read {}", prepared.manifest_path.display()))?;
     let capabilities_json = serde_json::to_value(&prepared.manifest.capabilities)
         .context("failed to serialize capabilities")?;
     let limits_json = prepared

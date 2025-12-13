@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "component.default",
+  "type": "component-config",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "routing": [{ "to": "branch" }]
+    },
+    "branch": {
+      "qa": { "component": "component-qa-process", "question": "branch?" },
+      "routing": [
+        { "to": "step_c" },
+        { "to": "step_d" }
+      ],
+      "out_map": { "state": { "branch_chosen": true } }
+    },
+    "step_c": {
+      "routing": [{ "to": "end" }]
+    },
+    "step_d": {
+      "err_map": { "error": "something_failed" },
+      "routing": [{ "to": "end" }]
+    },
+    "end": {}
+  },
+  "edges": [
+    { "from": "start", "to": "branch" },
+    { "from": "branch", "to": "step_c" },
+    { "from": "branch", "to": "step_d" },
+    { "from": "step_c", "to": "end" },
+    { "from": "step_d", "to": "end" }
+  ]
+}

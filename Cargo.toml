@@ -1,6 +1,6 @@
 [package]
 name = "greentic-dev"
-version = "0.4.17"
+version = "0.4.18"
 edition = "2024"
 description = "Developer CLI and local tooling for Greentic flows, packs, and components"
 license = "MIT OR Apache-2.0"
@@ -15,11 +15,6 @@ include = [
     "LICENSE*",
     "Cargo.toml",
 ]
-
-#[package.metadata.binstall]
-#pkg-url = "https://github.com/greentic-ai/greentic-dev/releases/download/greentic-dev-v{ version }/greentic-dev-v{ version }-{ target }.tgz"
-#bin-dir = "{ bin }{ binary-ext }"
-#pkg-fmt = "tgz"
 
 [workspace]
 members = ["crates/dev-viewer", "xtask"]
@@ -48,19 +43,20 @@ greentic-runner = "0.4"
 packc = "0.4"
 greentic-component = { version = "0.4", features = ["prepare", "describe", "cli"] }
 greentic-mcp = { version = "0.4" }
+greentic-secrets = { version = "0.4", default-features = false, features = ["core"] }
 jsonschema = "0.37"
 tempfile = "3"
 dirs = "6"
 which = "8"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "6", default-features = false, features = ["deflate"] }
 bytes = "1.7"
 async-compression = "0.4"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
 greentic-distributor-client = { version = "0.4", features = ["http-runtime"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+async-trait = "0.1"
 
-[patch.crates-io]
 [workspace.metadata.dist]
 cargo-dist-version = "0.24.1"
 ci = ["github"]
@@ -77,3 +73,9 @@ all-features = true
 
 [dev-dependencies]
 httpmock = "0.8"
+walkdir = "2"
+blake3 = "1"
+serde_cbor = "0.11"
+indexmap = "2"
+greentic-secrets = { version = "0.4", default-features = false, features = ["core"] }
+async-trait = "0.1"

@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::io::{self, IsTerminal, Write};
+use std::io::{self, IsTerminal, Read, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::bail;
@@ -11,6 +11,7 @@ use greentic_runner::desktop::{
 };
 use serde_json::{Value as JsonValue, json};
 use serde_yaml_bw as serde_yaml;
+use zip::ZipArchive;
 
 #[derive(Debug, Clone)]
 pub struct PackRunConfig<'a> {
@@ -22,6 +23,13 @@ pub struct PackRunConfig<'a> {
     pub allow_hosts: Option<Vec<String>>,
     pub mocks: MockSetting,
     pub artifacts_dir: Option<&'a Path>,
+    pub json: bool,
+    pub offline: bool,
+    pub mock_exec: bool,
+    pub allow_external: bool,
+    pub mock_external: bool,
+    pub mock_external_payload: Option<JsonValue>,
+    pub secrets_env_prefix: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -37,6 +45,42 @@ pub enum MockSetting {
 }
 
 pub fn run(config: PackRunConfig<'_>) -> Result<()> {
+    if config.mock_exec {
+        let input_value = parse_input(config.input.clone())?;
+        let rendered = mock_execute_pack(
+            config.pack_path,
+            config.entry.as_deref().unwrap_or("default"),
+            &input_value,
+            config.offline,
+            config.allow_external,
+            config.mock_external,
+            config
+                .mock_external_payload
+                .clone()
+                .unwrap_or_else(|| json!({ "mocked": true })),
+            config.secrets_env_prefix.as_deref(),
+        )?;
+        let mut rendered = rendered;
+        if let Some(map) = rendered.as_object_mut() {
+            map.insert("exec_mode".to_string(), json!("mock"));
+        }
+        if config.json {
+            println!(
+                "{}",
+                serde_json::to_string(&rendered).context("failed to render mock exec json")?
+            );
+        } else {
+            println!("{}", serde_json::to_string_pretty(&rendered)?);
+        }
+        let status = rendered
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        if status != "ok" {
+            bail!("pack run failed");
+        }
+        return Ok(());
+    }
     // Print runner diagnostics even if the caller did not configure tracing.
     let _ = tracing_subscriber::fmt::try_init();
 
@@ -64,12 +108,16 @@ pub fn run(config: PackRunConfig<'_>) -> Result<()> {
         }
     }
 
-    let input_value = parse_input(config.input)?;
-    let otlp_hook = config.otlp.map(|endpoint| OtlpHook {
-        endpoint,
-        headers: Vec::new(),
-        sample_all: true,
-    });
+    let input_value = parse_input(config.input.clone())?;
+    let otlp_hook = if config.offline {
+        None
+    } else {
+        config.otlp.map(|endpoint| OtlpHook {
+            endpoint,
+            headers: Vec::new(),
+            sample_all: true,
+        })
+    };
 
     // Avoid system proxy discovery (reqwest on macOS can panic in sandboxed CI).
     unsafe {
@@ -103,13 +151,24 @@ pub fn run(config: PackRunConfig<'_>) -> Result<()> {
         .context("pack execution failed")?;
 
     let value = serde_json::to_value(&run_result).context("failed to render run result JSON")?;
+    let mut value = value;
+    if let Some(map) = value.as_object_mut() {
+        map.insert("exec_mode".to_string(), json!("runtime"));
+    }
     let status = value
         .get("status")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let rendered =
-        serde_json::to_string_pretty(&value).context("failed to render run result JSON")?;
-    println!("{rendered}");
+    if config.json {
+        println!(
+            "{}",
+            serde_json::to_string(&value).context("failed to render run result JSON")?
+        );
+    } else {
+        let rendered =
+            serde_json::to_string_pretty(&value).context("failed to render run result JSON")?;
+        println!("{rendered}");
+    }
 
     if status == "Failure" || status == "PartialFailure" {
         let err = value
@@ -120,6 +179,44 @@ pub fn run(config: PackRunConfig<'_>) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn mock_execute_pack(
+    path: &Path,
+    flow_id: &str,
+    input: &JsonValue,
+    offline: bool,
+    allow_external: bool,
+    mock_external: bool,
+    mock_external_payload: JsonValue,
+    secrets_env_prefix: Option<&str>,
+) -> Result<JsonValue> {
+    let bytes =
+        std::fs::read(path).with_context(|| format!("failed to read pack {}", path.display()))?;
+    let mut archive = ZipArchive::new(std::io::Cursor::new(bytes)).context("open pack zip")?;
+    let mut manifest_bytes = Vec::new();
+    archive
+        .by_name("manifest.cbor")
+        .context("manifest.cbor missing")?
+        .read_to_end(&mut manifest_bytes)
+        .context("read manifest")?;
+    let manifest: greentic_types::PackManifest =
+        greentic_types::decode_pack_manifest(&manifest_bytes).context("decode manifest")?;
+    let flow = manifest
+        .flows
+        .iter()
+        .find(|f| f.id.as_str() == flow_id)
+        .ok_or_else(|| anyhow!("flow `{flow_id}` not found in pack"))?;
+    let exec_opts = crate::tests_exec::ExecOptions::builder()
+        .offline(offline)
+        .external_enabled(allow_external)
+        .mock_external(mock_external)
+        .mock_external_payload(mock_external_payload)
+        .secrets_env_prefix(secrets_env_prefix.unwrap_or_default())
+        .build();
+    let exec = crate::tests_exec::execute_with_options(&flow.flow, input, &exec_opts)?;
+    Ok(exec)
 }
 
 fn parse_input(input: Option<String>) -> Result<JsonValue> {

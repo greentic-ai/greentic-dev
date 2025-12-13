@@ -146,7 +146,7 @@ token = ""
         {
             let cursor = std::io::Cursor::new(&mut data);
             let mut zip = zip::ZipWriter::new(cursor);
-            let opts = zip::write::FileOptions::default();
+            let opts = zip::write::FileOptions::<()>::default();
             zip.add_directory("flows/", opts).unwrap();
             zip.start_file("flows/demo/flow.ygtc", opts).unwrap();
             zip.write_all(b"flow").unwrap();

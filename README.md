@@ -67,7 +67,7 @@ Once installed, `greentic-dev` becomes a single entry point for flow validation 
 > - Component commands use the `greentic-component` crate in-process; install `greentic-component` if you want to invoke its CLI directly.
 > - Pack commands use `packc` in-process; install `greentic-pack`/`packc` if you want the standalone CLI.
 >
-> Flow authoring: flows now live inside `component.manifest.json` under `dev_flows`. If a flow is missing, run `greentic-component flow update` to regenerate config flows. `greentic-dev flow add-step` defaults to `--manifest ./component.manifest.json --flow default`.
+> Flow authoring: config flows now live inside `component.manifest.json` under `dev_flows`. If a flow is missing, run `greentic-component flow update` to regenerate config flows. `greentic-dev flow add-step` defaults to `--manifest ./component.manifest.json --flow default` and edits pack flows in `flows/<flow-id>.ygtc`.
 
 ---
 

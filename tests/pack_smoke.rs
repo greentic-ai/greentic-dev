@@ -35,6 +35,13 @@ fn pack_build_run_verify_smoke() {
         allow_hosts: None,
         mocks: MockSetting::Off,
         artifacts_dir: Some(artifacts_dir.as_path()),
+        json: false,
+        offline: false,
+        mock_exec: false,
+        allow_external: false,
+        mock_external: false,
+        mock_external_payload: None,
+        secrets_env_prefix: None,
     })
     .expect("pack run");
 

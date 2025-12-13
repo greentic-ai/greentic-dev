@@ -115,6 +115,27 @@ pub struct PackRunArgs {
     /// JSON payload to use as run input
     #[arg(long = "input")]
     pub input: Option<String>,
+    /// Emit JSON output
+    #[arg(long = "json")]
+    pub json: bool,
+    /// Offline mode (disable network/proxy)
+    #[arg(long = "offline")]
+    pub offline: bool,
+    /// Use mock executor (internal/testing)
+    #[arg(long = "mock-exec", hide = true)]
+    pub mock_exec: bool,
+    /// Allow external calls in mock executor (default: false)
+    #[arg(long = "allow-external", hide = true)]
+    pub allow_external: bool,
+    /// Return mocked external responses when external calls are allowed (mock exec only)
+    #[arg(long = "mock-external", hide = true)]
+    pub mock_external: bool,
+    /// Path to JSON payload used for mocked external responses (mock exec only)
+    #[arg(long = "mock-external-payload", hide = true)]
+    pub mock_external_payload: Option<PathBuf>,
+    /// Prefix for env vars to load into the mock secrets store (mock exec only)
+    #[arg(long = "secrets-env-prefix", hide = true)]
+    pub secrets_env_prefix: Option<String>,
     /// Enforcement policy for pack signatures
     #[arg(long = "policy", default_value = "devok", value_enum)]
     pub policy: RunPolicyArg,
