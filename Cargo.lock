@@ -1697,6 +1697,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "greentic-config-types"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a4a8f988d82452ccfba2bd941237204b76e95664b84362c97ea072dfabb7008"
+dependencies = [
+ "greentic-types",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
 name = "greentic-dev"
 version = "0.4.18"
 dependencies = [
@@ -1744,12 +1756,13 @@ dependencies = [
 
 [[package]]
 name = "greentic-distributor-client"
-version = "0.4.4"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c140c1ff0534f83f856e57a09f32f7430ad2b2e6f58e93baf0b8b1e96bcded87"
+checksum = "1082a2dfbae457eb5daf152f192a1100a74d3164af772f0e18a72ab5d39f6050"
 dependencies = [
  "anyhow",
  "async-trait",
+ "greentic-config-types",
  "greentic-interfaces-guest",
  "greentic-types",
  "reqwest",
@@ -2121,6 +2134,7 @@ version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4054eef4f7b6acc6b41b27bd67bc5ad8a861725649b7dc7fc0aac962d25b47ef"
 dependencies = [
+ "anyhow",
  "chrono",
  "ciborium",
  "fnv",
@@ -2128,6 +2142,7 @@ dependencies = [
  "greentic-types-macros",
  "indexmap 2.11.4",
  "opentelemetry-otlp",
+ "schemars 1.1.0",
  "semver",
  "serde",
  "serde_json",
@@ -4166,6 +4181,7 @@ version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9558e172d4e8533736ba97870c4b2cd63f84b382a3d6eb063da41b91cce17289"
 dependencies = [
+ "chrono",
  "dyn-clone",
  "ref-cast",
  "schemars_derive",
