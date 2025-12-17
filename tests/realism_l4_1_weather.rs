@@ -1,6 +1,7 @@
 mod support;
 
 use anyhow::Result;
+use assert_cmd::cargo::cargo_bin_cmd;
 use serde_json::json;
 use support::diag_with_owner;
 use support::real_weather::load_weather_fixtures;
@@ -36,11 +37,7 @@ fn pack_realism_l4_1_weather_offline_blocks_external_cleanly() -> Result<()> {
         component_dir.parent().expect("component root"),
     )?;
 
-    let bin = std::env::var("CARGO_BIN_EXE_greentic-dev")
-        .or_else(|_| std::env::var("CARGO_BIN_EXE_greentic_dev"))
-        .unwrap_or_else(|_| "target/debug/greentic-dev".to_string());
-
-    let output = std::process::Command::new(bin)
+    let output = cargo_bin_cmd!("greentic-dev")
         .arg("pack")
         .arg("run")
         .arg("--offline")
@@ -62,16 +59,6 @@ fn pack_realism_l4_1_weather_offline_blocks_external_cleanly() -> Result<()> {
     if output.status.success() {
         // Until weatherapi wasm is present and wired, offline should block external. If not, skip.
         eprintln!("offline run unexpectedly succeeded; fixtures may be incomplete");
-        return Ok(());
-    }
-    if stdout.contains("No such file or directory") || stderr.contains("No such file or directory")
-    {
-        eprintln!("skipping: greentic-dev binary/fixture missing: {stderr}{stdout}");
-        return Ok(());
-    }
-    if stderr.contains("No such file or directory") {
-        // Allow environments missing the built greentic-dev binary or local fixtures.
-        eprintln!("skipping: greentic-dev binary/fixture missing: {stderr}");
         return Ok(());
     }
 
