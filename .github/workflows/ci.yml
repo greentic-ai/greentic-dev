@@ -38,6 +38,7 @@ jobs:
         run: |
           echo "CARGO_HOME=${{ runner.temp }}/cargo-${{ github.job }}-${{ github.run_id }}" >> "$GITHUB_ENV"
           echo "CARGO_TARGET_DIR=${{ runner.temp }}/target-${{ github.job }}-${{ github.run_id }}" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_DIR_RELEASE=${{ runner.temp }}/target-release-${{ github.job }}-${{ github.run_id }}" >> "$GITHUB_ENV"
 
       - name: Install tomlq
         run: cargo install tomlq --locked
@@ -69,6 +70,11 @@ jobs:
       - name: Tests
         run: cargo test --workspace --all-features --locked -- --nocapture
 
+      - name: Free space before release build
+        run: rm -rf "${CARGO_TARGET_DIR}" || true
+
       - name: Pack smoke
         if: hashFiles('**/Cargo.toml') != ''
+        env:
+          CARGO_TARGET_DIR: ${{ env.CARGO_TARGET_DIR_RELEASE }}
         run: cargo build --workspace --locked --release
