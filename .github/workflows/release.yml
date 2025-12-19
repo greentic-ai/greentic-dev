@@ -127,8 +127,7 @@ jobs:
           cp "$CARGO_TARGET_DIR/$TARGET/release/packc$BIN_EXT" "$STAGING/"
           cp "$CARGO_TARGET_DIR/$TARGET/release/greentic-component$BIN_EXT" "$STAGING/"
 
-          # Optional companion tools included only in release bundles.
-          # greentic-gui now comes from crates.io; greentic-secrets is still pulled from its sibling repo.
+          # Optional companion tools included only in release bundles (installed from crates.io).
           install_crate_tool() {
             local crate="$1"
             local bin="$2"
@@ -145,24 +144,8 @@ jobs:
             cp "${bin_path}" "${STAGING}/"
           }
 
-          fetch_tool() {
-            local repo="$1"
-            local tool="$2"
-            local url="https://github.com/${repo}/releases/download/v${VERSION}/${tool}-v${VERSION}-${TARGET}.tgz"
-            echo "[bundle] fetching ${tool} from ${url}"
-            tmpdir="$(mktemp -d)"
-            curl -fsSL "$url" -o "$tmpdir/${tool}.tgz"
-            tar xzf "$tmpdir/${tool}.tgz" -C "$tmpdir"
-            if [[ ! -f "$tmpdir/${tool}${BIN_EXT}" ]]; then
-              echo "[bundle] expected $tmpdir/${tool}${BIN_EXT} in archive; contents:"
-              ls -la "$tmpdir"
-              exit 1
-            fi
-            cp "$tmpdir/${tool}${BIN_EXT}" "$STAGING/"
-          }
-
           install_crate_tool "greentic-gui" "greentic-gui" "^0.4"
-          fetch_tool "greentic-ai/greentic-secrets" "greentic-secrets"
+          install_crate_tool "greentic-secrets" "greentic-secrets" "^0.4"
 
           cp README.md LICENSE-MIT LICENSE-APACHE "$STAGING/"
 
