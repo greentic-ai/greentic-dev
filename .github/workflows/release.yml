@@ -128,8 +128,22 @@ jobs:
           cp "$CARGO_TARGET_DIR/$TARGET/release/greentic-component$BIN_EXT" "$STAGING/"
 
           # Optional companion tools included only in release bundles.
-          # These are expected to be provided by sibling repos with matching version tags.
-          # If you don't want to ship them, remove these blocks and the `bundled-tools` bins.
+          # greentic-gui now comes from crates.io; greentic-secrets is still pulled from its sibling repo.
+          install_crate_tool() {
+            local crate="$1"
+            local bin="$2"
+            echo "[bundle] installing ${crate} v${VERSION} for ${TARGET} from crates.io"
+            tmpdir="$(mktemp -d)"
+            cargo install "${crate}" --locked --version "${VERSION}" --target "${TARGET}" --root "${tmpdir}" --bin "${bin}"
+            local bin_path="${tmpdir}/bin/${bin}${BIN_EXT}"
+            if [[ ! -f "${bin_path}" ]]; then
+              echo "[bundle] expected ${bin_path} after cargo install; contents:"
+              ls -la "${tmpdir}/bin"
+              exit 1
+            fi
+            cp "${bin_path}" "${STAGING}/"
+          }
+
           fetch_tool() {
             local repo="$1"
             local tool="$2"
@@ -146,7 +160,7 @@ jobs:
             cp "$tmpdir/${tool}${BIN_EXT}" "$STAGING/"
           }
 
-          fetch_tool "greentic-ai/greentic-gui" "greentic-gui"
+          install_crate_tool "greentic-gui" "greentic-gui"
           fetch_tool "greentic-ai/greentic-secrets" "greentic-secrets"
 
           cp README.md LICENSE-MIT LICENSE-APACHE "$STAGING/"
