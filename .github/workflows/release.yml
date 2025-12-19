@@ -132,6 +132,7 @@ jobs:
             local crate="$1"
             local bin="$2"
             local version_req="${3:-^0.4}"
+            local dest="${4:-$bin}"
             echo "[bundle] installing ${crate} ${version_req} for ${TARGET} from crates.io"
             tmpdir="$(mktemp -d)"
             cargo install "${crate}" --locked --version "${version_req}" --target "${TARGET}" --root "${tmpdir}" --bin "${bin}"
@@ -141,11 +142,11 @@ jobs:
               ls -la "${tmpdir}/bin"
               exit 1
             fi
-            cp "${bin_path}" "${STAGING}/"
+            cp "${bin_path}" "${STAGING}/${dest}${BIN_EXT}"
           }
 
           install_crate_tool "greentic-gui" "greentic-gui" "^0.4"
-          install_crate_tool "greentic-secrets" "greentic-secrets" "^0.4"
+          install_crate_tool "greentic-secrets-cli" "greentic-secrets-cli" "^0.4" "greentic-secrets"
 
           cp README.md LICENSE-MIT LICENSE-APACHE "$STAGING/"
 
