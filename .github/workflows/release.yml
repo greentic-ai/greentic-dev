@@ -132,9 +132,10 @@ jobs:
           install_crate_tool() {
             local crate="$1"
             local bin="$2"
-            echo "[bundle] installing ${crate} v${VERSION} for ${TARGET} from crates.io"
+            local version_req="${3:-^0.4}"
+            echo "[bundle] installing ${crate} ${version_req} for ${TARGET} from crates.io"
             tmpdir="$(mktemp -d)"
-            cargo install "${crate}" --locked --version "${VERSION}" --target "${TARGET}" --root "${tmpdir}" --bin "${bin}"
+            cargo install "${crate}" --locked --version "${version_req}" --target "${TARGET}" --root "${tmpdir}" --bin "${bin}"
             local bin_path="${tmpdir}/bin/${bin}${BIN_EXT}"
             if [[ ! -f "${bin_path}" ]]; then
               echo "[bundle] expected ${bin_path} after cargo install; contents:"
@@ -160,7 +161,7 @@ jobs:
             cp "$tmpdir/${tool}${BIN_EXT}" "$STAGING/"
           }
 
-          install_crate_tool "greentic-gui" "greentic-gui"
+          install_crate_tool "greentic-gui" "greentic-gui" "^0.4"
           fetch_tool "greentic-ai/greentic-secrets" "greentic-secrets"
 
           cp README.md LICENSE-MIT LICENSE-APACHE "$STAGING/"
