@@ -337,9 +337,9 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59446ce19cd142f8833f856eb31f3eb097812d1479ab224f54d72428ca21ea22"
+checksum = "08c78f31d7b1291f7ee735c1c6780ccde7785daae9a9206026862dab7d8792d1"
 dependencies = [
  "bytes",
  "futures-core",
@@ -1760,7 +1760,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-dev"
-version = "0.4.26"
+version = "0.4.27"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -1931,9 +1931,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-pack"
-version = "0.4.26"
+version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdd1630a185235252784ddc7973d06853e6c83f0877298dfa999c492d4c45073"
+checksum = "d2eb17da22c3035746e9ef76c600cd1d7d41bb3d2e39825f75f3e1e464b0b0f4"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1960,9 +1960,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-runner"
-version = "0.4.17"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a456295aff228d4a1598d2733f80621f717327b83977f534f4e79025c6933cdb"
+checksum = "b01e0b22ca7b138e28a9233b64403294e1f8aab050ecf9f14642f62713aa8d61"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1991,9 +1991,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-runner-desktop"
-version = "0.4.17"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa1e89b4629c337c429baaa335d768407b235c41387b475d9edb7cb5706ed4a6"
+checksum = "4fe85b803b47ce681a1b5b91807f94aaa62ff76568c8b33939830c11dfb060f5"
 dependencies = [
  "anyhow",
  "greentic-pack",
@@ -2012,9 +2012,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-runner-host"
-version = "0.4.17"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fa679ac1942e3eb54f1218c8bdeed4363d7d80190a8befc9af848d03717a552"
+checksum = "c2ebef5467a9a5320854d1268f484c4cb903417d2f0f519300d3fa3a0a3e4737"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2821,9 +2821,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ee5b5339afb4c41626dde77b7a611bd4f2c202b897852b4bcf5d03eddc61010"
+checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "js-sys"
@@ -3458,15 +3458,15 @@ checksum = "1a80800c0488c3a21695ea981a54918fbb37abf04f4d0720c453632255e2ff0e"
 
 [[package]]
 name = "pack_component_template"
-version = "0.4.26"
+version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e25cab79da75947e50ca10eb3383d82a8ee5e42a32ca0ec0f3e6e9b7767788f7"
+checksum = "546cf42f832244be6666586ef0a2f5b909ba291f4b00621cbc77bec8f6063a64"
 
 [[package]]
 name = "packc"
-version = "0.4.26"
+version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a4d98e366b648e493609f668ff5a38e748389865c3ed725969c8f90a845aec"
+checksum = "bb09be4c9fd28fda6305ab9a33393c815102a49369dedf8d76007644e19142ef"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -4132,9 +4132,9 @@ dependencies = [
 
 [[package]]
 name = "runner-core"
-version = "0.4.17"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01783b711ca646006bbb62ede4791ba1c484abfd0c46cdc0977b12135e3cce94"
+checksum = "bfb1861a2c910c7e7c9cc94a904283180baa396bd0d9663b106ae0918ba68111"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -4254,9 +4254,9 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
 name = "ryu"
-version = "1.0.21"
+version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62049b2877bf12821e8f9ad256ee38fdc31db7387ec2d3b3f403024de2034aea"
+checksum = "a50f4cf475b65d88e057964e0e9bb1f0aa9bbb2036dc65c64596b42932536984"
 
 [[package]]
 name = "same-file"
@@ -4416,9 +4416,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.147"
+version = "1.0.148"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6af14725505314343e673e9ecb7cd7e8a36aa9791eb936235a3567cc31447ae4"
+checksum = "3084b546a1dd6289475996f182a22aba973866ea8e8b02c51d9f46b1336a22da"
 dependencies = [
  "itoa",
  "memchr",
@@ -6417,9 +6417,9 @@ checksum = "40990edd51aae2c2b6907af74ffb635029d5788228222c4bb811e9351c0caad3"
 
 [[package]]
 name = "zmij"
-version = "0.1.9"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0095ecd462946aa3927d9297b63ef82fb9a5316d7a37d134eeb36e58228615a"
+checksum = "e6d6085d62852e35540689d1f97ad663e3971fc19cf5eceab364d62c646ea167"
 
 [[package]]
 name = "zopfli"
