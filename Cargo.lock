@@ -1851,9 +1851,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-interfaces"
-version = "0.4.66"
+version = "0.4.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1eb5a2831680a4407c4a7e8f18aeea7e8f157fb801fbd93985f598420924cf29"
+checksum = "03087692a2812d9f727e46e8b831b8f5123c96ae47eca9dd233b43b1e484567a"
 dependencies = [
  "anyhow",
  "greentic-types",
@@ -1861,9 +1861,9 @@ dependencies = [
  "thiserror 2.0.17",
  "time",
  "wasmtime",
- "wit-bindgen 0.49.0",
- "wit-bindgen-core",
- "wit-bindgen-rust",
+ "wit-bindgen 0.50.0",
+ "wit-bindgen-core 0.50.0",
+ "wit-bindgen-rust 0.50.0",
 ]
 
 [[package]]
@@ -1875,8 +1875,8 @@ dependencies = [
  "greentic-interfaces",
  "greentic-types",
  "wit-bindgen 0.49.0",
- "wit-bindgen-core",
- "wit-bindgen-rust",
+ "wit-bindgen-core 0.49.0",
+ "wit-bindgen-rust 0.49.0",
 ]
 
 [[package]]
@@ -6169,7 +6169,16 @@ version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c64be1abfe5d4fdb2d41581fac134e8c9204da1e604b5500926478b7f264e36f"
 dependencies = [
- "wit-bindgen-rust-macro",
+ "wit-bindgen-rust-macro 0.49.0",
+]
+
+[[package]]
+name = "wit-bindgen"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3f72f96146c1e2648232350c3c59efe5a17738767f72efdc5e766b9e4a8c896"
+dependencies = [
+ "wit-bindgen-rust-macro 0.50.0",
 ]
 
 [[package]]
@@ -6177,6 +6186,17 @@ name = "wit-bindgen-core"
 version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "886e8e938e4e9fe54143c080cbb99d7db5d19242b62ef225dbb28e17b3223bd8"
+dependencies = [
+ "anyhow",
+ "heck",
+ "wit-parser",
+]
+
+[[package]]
+name = "wit-bindgen-core"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ee98d5747ec63897e51101c8cafad569cc639346332c0378772ef4baeea8ed2"
 dependencies = [
  "anyhow",
  "heck",
@@ -6195,7 +6215,23 @@ dependencies = [
  "prettyplease",
  "syn",
  "wasm-metadata",
- "wit-bindgen-core",
+ "wit-bindgen-core 0.49.0",
+ "wit-component",
+]
+
+[[package]]
+name = "wit-bindgen-rust"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8596d6a44bcc2b66e99213c342a85ff72be1109972f5353bb07d05a890a0c257"
+dependencies = [
+ "anyhow",
+ "heck",
+ "indexmap 2.11.4",
+ "prettyplease",
+ "syn",
+ "wasm-metadata",
+ "wit-bindgen-core 0.50.0",
  "wit-component",
 ]
 
@@ -6210,8 +6246,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
- "wit-bindgen-core",
- "wit-bindgen-rust",
+ "wit-bindgen-core 0.49.0",
+ "wit-bindgen-rust 0.49.0",
+]
+
+[[package]]
+name = "wit-bindgen-rust-macro"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "098fd8b2c4bab0052159a87d02acad740a9c809afe9dcf5bd0b92eb3f63da154"
+dependencies = [
+ "anyhow",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "wit-bindgen-core 0.50.0",
+ "wit-bindgen-rust 0.50.0",
 ]
 
 [[package]]
