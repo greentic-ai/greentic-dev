@@ -338,8 +338,10 @@ fn flow_add_step_respects_offline_without_stub() {
 
     let prev_offline = std::env::var("GREENTIC_DEV_OFFLINE").ok();
     let prev_stub = std::env::var("GREENTIC_DEV_RESOLVE_STUB").ok();
+    let prev_profile = std::env::var("GREENTIC_DISTRIBUTOR_PROFILE").ok();
     set_env("GREENTIC_DEV_OFFLINE", "1");
     remove_env("GREENTIC_DEV_RESOLVE_STUB");
+    remove_env("GREENTIC_DISTRIBUTOR_PROFILE");
 
     let err = run_add_step(FlowAddStepArgs {
         flow_id: "demo".into(),
@@ -361,6 +363,11 @@ fn flow_add_step_respects_offline_without_stub() {
         set_env("GREENTIC_DEV_RESOLVE_STUB", &val);
     } else {
         remove_env("GREENTIC_DEV_RESOLVE_STUB");
+    }
+    if let Some(val) = prev_profile {
+        set_env("GREENTIC_DISTRIBUTOR_PROFILE", &val);
+    } else {
+        remove_env("GREENTIC_DISTRIBUTOR_PROFILE");
     }
     std::env::set_current_dir(prev_dir).unwrap();
 
