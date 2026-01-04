@@ -19,6 +19,7 @@ use greentic_dev::pack_cli::{pack_inspect, pack_plan};
 use greentic_dev::pack_run::{self, MockSetting, RunPolicy};
 use greentic_dev::secrets_cli::run_secrets_command;
 use packc::cli as packc_cli;
+use packc::config as packc_config;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -142,7 +143,25 @@ fn packc(subcommand: &str, args: &[String]) -> Result<()> {
     argv.push("packc".to_string());
     argv.push(subcommand.to_string());
     argv.extend(args.iter().cloned());
-    let cli = packc_cli::Cli::parse_from(argv);
+    let mut cli = packc_cli::Cli::parse_from(argv);
+
+    if let packc_cli::Command::Build(build_args) = &mut cli.command
+        && build_args.gtpack_out.is_none()
+        && !build_args.dry_run
+    {
+        let pack_root = build_args.input.clone();
+        let config = packc_config::load_pack_config(&pack_root).with_context(|| {
+            format!(
+                "failed to load pack.yaml under {} to infer gtpack output",
+                pack_root.display()
+            )
+        })?;
+        let default_gtpack = pack_root
+            .join("target")
+            .join(format!("{}.gtpack", config.pack_id));
+        build_args.gtpack_out = Some(default_gtpack);
+    }
+
     packc_cli::run_with_cli(cli)?;
     Ok(())
 }
