@@ -35,36 +35,42 @@ pub fn run_component_add(
     profile: Option<&str>,
     intent: PackInitIntent,
 ) -> Result<PathBuf> {
-    let cfg = config::load_with_meta(None)?;
-    let profile = distributor::resolve_profile(&cfg, profile)?;
-    let (component_id, version_req) = parse_coordinate(coordinate)?;
-    let tenant_ctx = build_tenant_ctx(&profile)?;
-    let environment_id = DistributorEnvironmentId::from(profile.environment_id.as_str());
-    let pack_id = detect_pack_id().unwrap_or_else(|| "greentic-dev-local".to_string());
+    let coordinate_path = PathBuf::from(coordinate);
+    if coordinate_path.exists() {
+        return Ok(coordinate_path);
+    }
 
     let offline = std::env::var("GREENTIC_DEV_OFFLINE")
         .ok()
         .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
     let stubbed_response = load_stubbed_response();
-    if offline && stubbed_response.is_none() && !PathBuf::from(coordinate).exists() {
+    if offline && stubbed_response.is_none() {
         bail!(
             "offline mode enabled (GREENTIC_DEV_OFFLINE=1) and coordinate `{coordinate}` is not a local path; provide a stub via GREENTIC_DEV_RESOLVE_STUB or use a local component path"
         );
     }
 
-    let req = ResolveComponentRequest {
-        tenant: tenant_ctx.clone(),
-        environment_id,
-        pack_id,
-        component_id: component_id.clone(),
-        version: version_req.to_string(),
-        extra: json!({ "intent": format!("{:?}", intent) }),
-    };
+    let (component_id, version_req) = parse_coordinate(coordinate)?;
 
     let response = if let Some(resp) = stubbed_response {
         resp?
     } else {
+        let cfg = config::load_with_meta(None)?;
+        let profile = distributor::resolve_profile(&cfg, profile)?;
+        let tenant_ctx = build_tenant_ctx(&profile)?;
+        let environment_id = DistributorEnvironmentId::from(profile.environment_id.as_str());
+        let pack_id = detect_pack_id().unwrap_or_else(|| "greentic-dev-local".to_string());
+
+        let req = ResolveComponentRequest {
+            tenant: tenant_ctx.clone(),
+            environment_id,
+            pack_id,
+            component_id: component_id.clone(),
+            version: version_req.to_string(),
+            extra: json!({ "intent": format!("{:?}", intent) }),
+        };
+
         let client = http_client(&profile)?;
         let rt = Runtime::new().context("failed to start tokio runtime for distributor client")?;
         rt.block_on(client.resolve_component(req))?
