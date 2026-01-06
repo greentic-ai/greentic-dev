@@ -8,7 +8,9 @@ use std::path::PathBuf;
 fn developer_guide_happy_path() {
     // Keep temp artifacts inside the workspace so path safety checks pass.
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let tmp = tempfile::tempdir_in(workspace.join("target")).expect("tempdir");
+    let target_dir = workspace.join("target");
+    fs::create_dir_all(&target_dir).expect("ensure target dir for tempfiles");
+    let tmp = tempfile::tempdir_in(target_dir).expect("tempdir");
     let pack_dir = tmp.path();
 
     // Minimal flow that exercises component.exec with the dev.greentic.echo fixture component.
