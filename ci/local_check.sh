@@ -20,6 +20,27 @@ echo "[check_local] toolchain:"
 rustup --version || true
 cargo --version
 
+ensure_bin() {
+  local bin="$1"
+  if command -v "$bin" >/dev/null 2>&1; then
+    return 0
+  fi
+  if [[ -n "${OFFLINE_FLAG}" ]]; then
+    echo "[check_local] missing $bin but offline; please install it manually" >&2
+    return 1
+  fi
+  echo "[check_local] installing $bin via cargo binstall"
+  cargo binstall ${LOCKED_FLAG} ${OFFLINE_FLAG} -y "$bin"
+}
+
+echo "[check_local] ensuring required binaries (greentic-flow, greentic-component, packc, greentic-pack, greentic-runner, ygtc-lint)"
+ensure_bin greentic-flow
+ensure_bin greentic-component
+ensure_bin packc
+ensure_bin greentic-pack
+ensure_bin greentic-runner
+ensure_bin ygtc-lint
+
 if [[ -z "${OFFLINE_FLAG}" ]]; then
   echo "[check_local] fetch (locked)"
   if ! cargo fetch --locked; then
