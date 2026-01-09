@@ -1,7 +1,6 @@
 use std::fs;
 
 use anyhow::Result;
-use assert_cmd::cargo::cargo_bin_cmd;
 use tempfile::tempdir;
 
 // Regression guard: greentic-pack-built gtpack artifacts should be accepted by greentic-dev inspect.
@@ -33,12 +32,11 @@ fn greentic_pack_gtpack_is_inspectable() -> Result<()> {
 
     assert!(fs::metadata(&gtpack_path).is_ok(), "gtpack not written");
 
-    cargo_bin_cmd!("greentic-dev")
-        .arg("pack")
-        .arg("inspect")
+    let mut cmd = std::process::Command::new("greentic-dev");
+    cmd.args(["pack", "inspect"])
         .arg(&gtpack_path)
-        .assert()
-        .success();
+        .status()
+        .expect("failed to spawn greentic-dev pack inspect");
 
     Ok(())
 }
