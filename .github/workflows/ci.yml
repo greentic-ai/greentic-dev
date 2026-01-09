@@ -46,6 +46,7 @@ jobs:
           echo "CARGO_HOME=${{ runner.temp }}/cargo-${{ github.job }}-${{ github.run_id }}" >> "$GITHUB_ENV"
           echo "CARGO_TARGET_DIR=${{ runner.temp }}/target-${{ github.job }}-${{ github.run_id }}" >> "$GITHUB_ENV"
           echo "CARGO_TARGET_DIR_RELEASE=${{ runner.temp }}/target-release-${{ github.job }}-${{ github.run_id }}" >> "$GITHUB_ENV"
+          echo "${{ runner.temp }}/cargo-${{ github.job }}-${{ github.run_id }}/bin" >> "$GITHUB_PATH"
 
       - name: Install tomlq
         run: cargo install tomlq --locked
