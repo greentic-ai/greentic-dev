@@ -81,7 +81,7 @@ greentic-dev pack components -- --in .
 ```
 6) **Validate the flow.**
 ```bash
-greentic-dev flow doctor -f flows/main.ygtc --json
+greentic-dev flow doctor flows/main.ygtc --json
 ```
 7) **Check the pack manifest and flows.**
 ```bash
@@ -117,7 +117,7 @@ greentic-dev component doctor components/hello-world/target/wasm32-wasip2/releas
 
 # pack + run
 greentic-dev pack components -- --in .
-greentic-dev flow doctor -f flows/main.ygtc --json
+greentic-dev flow doctor flows/main.ygtc --json
 greentic-dev pack doctor --pack pack.yaml
 greentic-dev pack build -- --in . --gtpack-out dist/hello.gtpack
 greentic-dev pack run --pack dist/hello.gtpack --offline --mocks on

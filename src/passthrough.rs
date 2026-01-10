@@ -15,7 +15,11 @@ pub fn resolve_binary(name: &str) -> Result<PathBuf> {
         bail!("{env_key} points to non-existent binary: {}", pb.display());
     }
 
-    // Optional workspace target resolution (debug and release).
+    if let Ok(path) = which::which(name) {
+        return Ok(path);
+    }
+
+    // Optional workspace target resolution (debug and release) as a fallback.
     if let Ok(cwd) = env::current_dir() {
         for dir in ["target/debug", "target/release"] {
             let candidate = cwd.join(dir).join(name);

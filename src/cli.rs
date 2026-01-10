@@ -46,22 +46,23 @@ pub enum Command {
 
 #[derive(Subcommand, Debug)]
 pub enum FlowCommand {
-    /// Validate a flow YAML file via greentic-flow doctor
-    Validate(FlowValidateArgs),
-    /// Doctor (preferred) validates a flow YAML file via greentic-flow doctor
-    Doctor(FlowValidateArgs),
+    /// Validate a flow YAML file via greentic-flow doctor (deprecated; use doctor)
+    Validate(FlowDoctorArgs),
+    /// Doctor validates a flow YAML file via greentic-flow doctor (passthrough)
+    Doctor(FlowDoctorArgs),
     /// Add a configured component step to a flow via config-flow
     AddStep(Box<FlowAddStepArgs>),
 }
 
 #[derive(Args, Debug)]
-pub struct FlowValidateArgs {
-    /// Path to the flow definition (YAML)
-    #[arg(short = 'f', long = "file")]
-    pub file: PathBuf,
-    /// Emit JSON output (greentic-flow doctor --json)
-    #[arg(long = "json")]
-    pub json: bool,
+pub struct FlowDoctorArgs {
+    /// Arguments passed directly to `greentic-flow doctor`
+    #[arg(
+        value_name = "ARGS",
+        trailing_var_arg = true,
+        allow_hyphen_values = true
+    )]
+    pub passthrough: Vec<String>,
 }
 
 #[derive(Args, Debug)]
@@ -213,8 +214,10 @@ pub enum PackCommand {
     Verify(PackcArgs),
     /// Delegate to greentic-pack gui helpers
     Gui(PackcArgs),
-    /// Inspect a .gtpack (or directory via temporary build)
+    /// Inspect/doctor a .gtpack (or directory via temporary build)
     Inspect(PackInspectArgs),
+    /// Doctor a .gtpack (or directory via temporary build)
+    Doctor(PackInspectArgs),
     /// Generate a deployment plan
     Plan(PackPlanArgs),
     /// Events helpers (legacy)

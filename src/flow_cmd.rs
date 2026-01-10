@@ -1,30 +1,22 @@
 use std::ffi::OsString;
 use std::process;
 
-use crate::cli::{FlowAddStepArgs, FlowAddStepMode, FlowValidateArgs};
+use crate::cli::{FlowAddStepArgs, FlowAddStepMode, FlowDoctorArgs};
 use crate::passthrough::{resolve_binary, run_passthrough};
 use crate::path_safety::normalize_under_root;
 use anyhow::{Context, Result};
 
-pub fn validate(args: FlowValidateArgs) -> Result<()> {
-    let root = std::env::current_dir()
-        .context("failed to resolve workspace root")?
-        .canonicalize()
-        .context("failed to canonicalize workspace root")?;
-    let safe = normalize_under_root(&root, &args.file)?;
-    let bin = resolve_binary("greentic-flow")?;
-    let mut passthrough_args: Vec<OsString> =
-        vec!["doctor".into(), "--flow".into(), safe.into_os_string()];
-    if args.json {
-        passthrough_args.push("--json".into());
-    }
-
-    let status = run_passthrough(&bin, &passthrough_args, false)?;
-    process::exit(status.code().unwrap_or(1));
+pub fn validate(args: FlowDoctorArgs) -> Result<()> {
+    eprintln!("greentic-dev flow validate is deprecated; forwarding to greentic-flow doctor");
+    doctor(args)
 }
 
-pub fn doctor(args: FlowValidateArgs) -> Result<()> {
-    validate(args)
+pub fn doctor(args: FlowDoctorArgs) -> Result<()> {
+    let bin = resolve_binary("greentic-flow")?;
+    let mut passthrough_args: Vec<OsString> = vec!["doctor".into()];
+    passthrough_args.extend(args.passthrough.into_iter().map(OsString::from));
+    let status = run_passthrough(&bin, &passthrough_args, false)?;
+    process::exit(status.code().unwrap_or(1));
 }
 
 pub fn run_add_step(args: FlowAddStepArgs) -> Result<()> {
