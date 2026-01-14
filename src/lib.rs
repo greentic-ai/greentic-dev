@@ -1,3 +1,4 @@
+pub mod cbor_cmd;
 pub mod cli;
 pub mod cmd;
 pub mod component_add;
@@ -7,7 +8,6 @@ pub mod config;
 pub mod delegate;
 pub mod dev_runner;
 pub mod distributor;
-pub mod flow_cmd;
 pub mod gui_dev;
 pub mod mcp_cmd;
 pub mod pack_build;

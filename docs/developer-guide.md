@@ -57,40 +57,40 @@ cd hello-pack
 ```bash
 greentic-dev component new --name hello-world --path ./components/hello-world --non-interactive --no-git --no-check
 ```
-3) **Build and doctor the component.** (Doctor needs either a colocated manifest or an explicit `--manifest`.)
+3) **Build and doctor the component.** (Doctor validates the component is correctly formatted and needs either a colocated manifest or an explicit `--manifest`.)
 ```bash
 greentic-dev component build --manifest components/hello-world/component.manifest.json
-greentic-dev component doctor components/hello-world/target/wasm32-wasip2/release/component_hello_world.wasm \
+greentic-dev component doctor components/hello-world/target/wasm32-wasip2/release/hello_world.wasm \
   --manifest components/hello-world/component.manifest.json
 ```
-4) **Add the component to the flow.** This wires your built component into the default flow (after `start`) using greentic-flow via greentic-dev.
+4) **Add the main flow and the component to the flow.** This wires your built component into the default flow using greentic-flow via greentic-dev.
 ```bash
 greentic-dev flow add-step \
   --flow flows/main.ygtc \
-  --after start \
-  --component dev.local.hello-pack.hello-world \
+  --local-wasm  components/hello-world/target/wasm32-wasip2/release/hello_world.wasm \
+  --node-id hello-world \
   --operation handle_message \
-  --payload '{}' \
+  --payload '{"input": "Hello from hello-world!"}' \
   --routing-out
 ```
 > Tip: if your manifest defines the operation, you can omit `--operation`; `--payload`/`--routing` can also be omitted for the default shape.
 
 5) **Sync pack.yaml components from the components/ directory.** This uses the underlying `greentic-pack components` to add your built component entry into `pack.yaml`.
 ```bash
-greentic-dev pack components -- --in .
+greentic-dev pack components --in .
 ```
 6) **Validate the flow.**
 ```bash
-greentic-dev flow doctor flows/main.ygtc --json
+greentic-dev flow doctor flows/main.ygtc
 ```
-7) **Check the pack manifest and flows.**
+7) **Build and check the pack.**
 ```bash
-greentic-dev pack doctor --pack pack.yaml
+greentic-dev pack build --in . --gtpack-out dist/hello.gtpack
+greentic-dev pack doctor dist/hello.gtpack
 ```
 
-8) **Build and run the pack locally (offline).**
+8) **Run the pack locally (offline).**
 ```bash
-greentic-dev pack build -- --in . --gtpack-out dist/hello.gtpack
 greentic-dev pack run --pack dist/hello.gtpack --offline --mocks on --artifacts dist/artifacts
 ```
 

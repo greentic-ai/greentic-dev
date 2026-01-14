@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "flow": "hello-flow.ygtc",
+  "nodes": {
+    "start": {
+      "source": {
+        "kind": "local",
+        "path": "file://../../../fixtures/components/dev.greentic.echo/component.wasm"
+      }
+    },
+    "log": {
+      "source": {
+        "kind": "local",
+        "path": "file://../../../fixtures/components/dev.greentic.echo/component.wasm"
+      }
+    }
+  }
+}

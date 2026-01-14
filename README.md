@@ -14,11 +14,9 @@ The power: you can stitch together local components, pull remote ones, validate 
 ## Quick Start (happy path)
 
 ```bash
-# 0) Install the toolkit and companion CLIs
+# 0) Install the toolkit (bundles companion CLIs)
 cargo install cargo-binstall
 cargo binstall -y greentic-dev
-# Companion CLIs used under the hood (install from crates.io or your package manager)
-cargo binstall -y greentic-component greentic-flow greentic-pack greentic-runner greentic-secrets-cli greentic-gui
 
 # 1) Scaffold a pack workspace
 greentic-dev pack new -- --dir hello-pack dev.local.hello-pack

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ffi::OsString, path::PathBuf};
 
 use crate::secrets_cli::SecretsCommand;
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -21,42 +21,71 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    /// Flow tooling (validate, lint, bundle inspection)
-    #[command(subcommand)]
-    Flow(FlowCommand),
-    /// Pack tooling (delegates to greentic-pack; greentic-runner for pack run)
-    #[command(subcommand)]
-    Pack(PackCommand),
-    /// Component tooling (delegates to greentic-component built-ins + distributor add)
-    #[command(subcommand)]
-    Component(ComponentCommand),
+    /// Flow passthrough (greentic-flow)
+    Flow(PassthroughArgs),
+    /// Pack passthrough (greentic-pack; pack run uses greentic-dev runner, help uses greentic-runner-cli)
+    Pack(PassthroughArgs),
+    /// Component passthrough (greentic-component)
+    Component(PassthroughArgs),
     /// Manage greentic-dev configuration
     #[command(subcommand)]
     Config(ConfigCommand),
     /// MCP tooling
     #[command(subcommand)]
     Mcp(McpCommand),
-    /// GUI dev tooling (serve packs locally, stage dev packs)
-    #[command(subcommand)]
-    Gui(GuiCommand),
+    /// GUI passthrough (greentic-gui)
+    Gui(PassthroughArgs),
     /// Secrets convenience wrappers
     #[command(subcommand)]
     Secrets(SecretsCommand),
+    /// Decode a CBOR file to text
+    Cbor(CborArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+#[command(disable_help_flag = true)]
+pub struct PassthroughArgs {
+    /// Arguments passed directly to the underlying command
+    #[arg(
+        value_name = "ARGS",
+        trailing_var_arg = true,
+        allow_hyphen_values = true
+    )]
+    pub args: Vec<OsString>,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum FlowCommand {
-    /// Validate a flow YAML file via greentic-flow doctor (deprecated; use doctor)
-    Validate(FlowDoctorArgs),
     /// Doctor validates a flow YAML file via greentic-flow doctor (passthrough)
     Doctor(FlowDoctorArgs),
+    /// Create a new flow skeleton at the given path
+    New(FlowPassthroughArgs),
+    /// Update flow metadata in-place without overwriting nodes
+    Update(FlowPassthroughArgs),
     /// Add a configured component step to a flow via config-flow
     AddStep(Box<FlowAddStepArgs>),
+    /// Update an existing node (rerun config/default with overrides)
+    UpdateStep(FlowPassthroughArgs),
+    /// Delete a node and optionally splice routing
+    DeleteStep(FlowPassthroughArgs),
+    /// Attach or repair a sidecar component binding without changing flow nodes
+    BindComponent(FlowPassthroughArgs),
 }
 
 #[derive(Args, Debug)]
 pub struct FlowDoctorArgs {
     /// Arguments passed directly to `greentic-flow doctor`
+    #[arg(
+        value_name = "ARGS",
+        trailing_var_arg = true,
+        allow_hyphen_values = true
+    )]
+    pub passthrough: Vec<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct FlowPassthroughArgs {
+    /// Arguments passed directly to `greentic-flow`
     #[arg(
         value_name = "ARGS",
         trailing_var_arg = true,
@@ -475,6 +504,13 @@ pub struct ConfigSetArgs {
     /// Override config file path (default: $XDG_CONFIG_HOME/greentic-dev/config.toml)
     #[arg(long = "file")]
     pub file: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+pub struct CborArgs {
+    /// Path to the CBOR file to decode
+    #[arg(value_name = "PATH")]
+    pub path: PathBuf,
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
