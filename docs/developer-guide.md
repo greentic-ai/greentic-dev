@@ -89,9 +89,9 @@ greentic-dev pack build --in . --gtpack-out dist/hello.gtpack
 greentic-dev pack doctor dist/hello.gtpack
 ```
 
-8) **Run the pack locally (offline).**
+8) **Run the pack.**
 ```bash
-greentic-dev pack run --pack dist/hello.gtpack --offline --artifacts dist/artifacts
+greentic-dev pack run --pack dist/hello.gtpack --artifacts dist/artifacts
 ```
 
 That sequence yields a runnable pack that pulls a config-flow-defined node from your component, bundles it, and executes it locally without touching the network.
