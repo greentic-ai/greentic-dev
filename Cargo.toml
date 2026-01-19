@@ -88,7 +88,7 @@ greentic-pack-lib = "0.4"
 greentic-mcp = "0.4"
 greentic-component = { version = "0.4", features = ["prepare", "describe", "cli"] }
 greentic-secrets = { version = "0.4", default-features = false, features = ["core", "spec"] }
-jsonschema = "0.38"
+jsonschema = "0.40"
 tempfile = "3"
 dirs = "6"
 which = "8"
