@@ -1685,9 +1685,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-component"
-version = "0.4.33"
+version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b24487331d352e6484c673986ec687eeb93a1e85808a01cd44a44e4caa90619"
+checksum = "c5fc824dd49c003f6e1e8a4f193717508eb89912b7143f75b80b9dc8b95d23c7"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1698,6 +1698,7 @@ dependencies = [
  "directories",
  "displaydoc",
  "greentic-component-manifest",
+ "greentic-distributor-client",
  "greentic-interfaces",
  "greentic-interfaces-host",
  "greentic-interfaces-wasmtime",
