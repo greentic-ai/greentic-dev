@@ -5,6 +5,42 @@ export CARGO_TERM_COLOR=always
 export CARGO_NET_RETRY=10
 export CARGO_HTTP_CHECK_REVOKE=false
 
+TOOLCHAIN_FILE="rust-toolchain.toml"
+if [[ -r "${TOOLCHAIN_FILE}" ]]; then
+  if TOOLCHAIN_INFO=$(python - <<'PY'
+import pathlib, re
+
+path = pathlib.Path("rust-toolchain.toml")
+text = path.read_text()
+channel = ""
+components = []
+for line in text.splitlines():
+    line = line.strip()
+    if line.startswith("channel") and "=" in line:
+        channel = line.split("=", 1)[1].strip().strip('"')
+    elif line.startswith("components") and "=" in line:
+        components = re.findall(r'"([^"]+)"', line)
+print(channel)
+print(" ".join(components))
+PY
+  ); then
+    TOOLCHAIN_CHANNEL=$(printf '%s' "$TOOLCHAIN_INFO" | sed -n '1p' | tr -d '\r')
+    TOOLCHAIN_COMPONENTS=$(printf '%s' "$TOOLCHAIN_INFO" | sed -n '2p' | tr -d '\r')
+    if [[ -n "$TOOLCHAIN_CHANNEL" ]]; then
+      if [[ "${CARGO_NET_OFFLINE:-false}" != "true" ]]; then
+        echo "[check_local] ensuring rust toolchain ${TOOLCHAIN_CHANNEL} is installed"
+        rustup toolchain install "$TOOLCHAIN_CHANNEL"
+        if [[ -n "$TOOLCHAIN_COMPONENTS" ]]; then
+          rustup component add --toolchain "$TOOLCHAIN_CHANNEL" $TOOLCHAIN_COMPONENTS
+        fi
+      else
+        echo "[check_local] offline; skipping rust toolchain install for ${TOOLCHAIN_CHANNEL}"
+      fi
+      export RUSTUP_TOOLCHAIN="$TOOLCHAIN_CHANNEL"
+    fi
+  fi
+fi
+
 if [[ -z "${CARGO_TARGET_DIR:-}" ]]; then
   export CARGO_TARGET_DIR="$(pwd)/.target-local"
 fi

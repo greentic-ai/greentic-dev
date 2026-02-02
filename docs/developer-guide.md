@@ -109,17 +109,26 @@ If you want to wire a remote component into your pack and flow, you can referenc
 greentic-dev pack new --dir ./hello2-pack dev.local.hello2-pack
 cd hello2-pack
 ```
-2) **Add a flow step that points at the remote templates component.**
+2) **Generate answers for the remote templates component and add the resulting node.**
 ```bash
+mkdir -p flows/answers
+greentic-dev flow answers \
+  --component oci://ghcr.io/greentic-ai/components/templates:latest \
+  --operation text \
+  --mode config \
+  --name templates \
+  --out-dir flows/answers
 greentic-dev flow add-step \
   --flow flows/main.ygtc \
   --node-id templates \
-  --operation handle_message \
-  --payload '{"input":"Hello from templates!"}' \
+  --operation text \
+  --mode config \
   --component oci://ghcr.io/greentic-ai/components/templates:latest \
+  --answers-file flows/answers/templates.example.json \
   --routing-out
 ```
-> If you want a digest-pinned ref, add `--pin` and copy the resulting digest into `pack.yaml` instead of `:latest`.
+> The templates `text` operation expects a `config` object; confirm the generated `templates.example.json` includes a top-level `config` field containing the `text` you want to render before running `add-step`.
+`flow answers` writes `flows/answers/templates.schema.json` and `flows/answers/templates.example.json`; edit the example JSON to ensure you provide a full `ChannelMessageEnvelope` for both `config.msg` and `msg` (the schema mirrors `greentic_types::ChannelMessageEnvelope`, e.g., `id`, `tenant.{env,tenant,tenant_id}`, `channel`, `session_id`, `text`, `metadata`, etc.) before re-running `add-step` with `--answers-file`. Use `--pin` on `flow add-step` to resolve the OCI tag to a digest if you want reproducible builds.
 
 
 3) **Optionally: Validate the flow and pack.** (`:latest` requires `--allow-oci-tags`.)
@@ -132,6 +141,7 @@ greentic-dev pack build --in . --gtpack-out dist/hello2.gtpack --allow-oci-tags
 greentic-dev pack doctor --pack dist/hello2.gtpack
 greentic-dev pack run --pack dist/hello2.gtpack --artifacts dist/artifacts
 ```
+> Offline test rigs sometimes skip this last command because the templates component expects runtime metadata we cannot provide artificially; if a real registry is accessible the run should succeed once the manifest's `config` payload matches `templates.schema.json`.
 
 ---
 

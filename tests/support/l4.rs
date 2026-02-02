@@ -17,6 +17,7 @@ pub fn build_l4_pack() -> Result<Vec<u8>> {
     let manifest = PackManifest {
         schema_version: "1".to_string(),
         pack_id: PackId::from_str("dev.local.l4")?,
+        name: None,
         version: Version::parse("0.1.0")?,
         kind: PackKind::Application,
         publisher: "test".into(),

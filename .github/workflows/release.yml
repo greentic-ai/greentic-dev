@@ -41,7 +41,8 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/share/dotnet || true
           df -h
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Use repo rust-toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add cargo bin to PATH
         run: echo "${CARGO_HOME}/bin" >> "$GITHUB_PATH"
@@ -120,7 +121,8 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/share/dotnet || true
           df -h
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Use repo rust-toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - uses: actions/cache@v4
         with:
@@ -195,7 +197,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Use repo rust-toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Compute crate version
         id: version

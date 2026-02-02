@@ -19,11 +19,11 @@ cargo install cargo-binstall
 cargo binstall -y greentic-dev
 
 # 1) Scaffold a pack workspace
-greentic-dev pack new -- --dir hello-pack dev.local.hello-pack
+greentic-dev pack new --dir hello-pack hello-pack
 cd hello-pack
 
 # 2) Scaffold + build + doctor a component
-greentic-dev component new --name hello-world --path ./components/hello-world --non-interactive --no-git --no-check
+greentic-dev component new --name hello-world --path ./components/hello-world --non-interactive --no-check
 greentic-dev component build --manifest components/hello-world/component.manifest.json
 greentic-dev component doctor components/hello-world/target/wasm32-wasip2/release/component_hello_world.wasm \
   --manifest components/hello-world/component.manifest.json
@@ -31,17 +31,18 @@ greentic-dev component doctor components/hello-world/target/wasm32-wasip2/releas
 # 3) Wire it into a flow and validate
 greentic-dev flow add-step \
   --flow flows/main.ygtc \
-  --after start \
-  --component dev.local.hello-pack.hello-world \
+  --local-wasm components/hello-world \
+  --node-id hello \
   --operation handle_message \
   --payload '{}' \
-  --routing '[{"out":true}]'
-greentic-dev flow doctor flows/main.ygtc --json
+  --routing-out
+greentic-dev flow doctor flows/main.ygtc
 
 # 4) Sync pack manifest, doctor, build, run
-greentic-dev pack components -- --in .
-greentic-dev pack doctor --pack pack.yaml
-greentic-dev pack build -- --in . --gtpack-out dist/hello.gtpack
+greentic-dev pack components --in .
+
+greentic-dev pack build --in . --gtpack-out dist/hello.gtpack
+greentic-dev pack doctor --pack dist/hello.gtpack
 greentic-dev pack run --pack dist/hello.gtpack --offline --artifacts dist/artifacts
 ```
 
@@ -91,7 +92,7 @@ Everything is validated before execution: flows are checked against component de
 
 ## Requirements
 
-- Rust 1.89+ (repo pins `rust-toolchain.toml`)
+- Rust 1.90+ (repo pins `rust-toolchain.toml`)
 - `wasm32-wasip2` target for component builds: `rustup target add wasm32-wasip2`
 - Network optional: most flows/components can run offline; remote component pulls require connectivity unless cached.
 
