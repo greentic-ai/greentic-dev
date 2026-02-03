@@ -94,7 +94,7 @@ dirs = "6"
 which = "8"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 zip = { version = "7", default-features = false, features = ["deflate"] }
-bytes = "1.7"
+bytes = "1.11"
 async-compression = "0.4"
 greentic-distributor-client = { version = "0.4", features = ["http-runtime"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
